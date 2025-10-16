@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIAGNÓSTICO - Refresh del Agente</title>
+</head>
+<body>
+
+<h1>🔍 DIAGNÓSTICO DE PROBLEMA DE REFRESH</h1>
+<p><strong>Problema:</strong> La página se refresca cuando se genera cotización</p>
+
+<hr>
+
+<h2>📋 POSIBLES CAUSAS IDENTIFICADAS:</h2>
+
+<h3>1. ❌ Evento Enter sin preventDefault</h3>
+<pre><code>
+// PROBLEMA ACTUAL:
+chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();  // ← SIN preventDefault
+});
+
+// SOLUCIÓN:
+chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();  // ← PREVENIR COMPORTAMIENTO POR DEFECTO
+        sendMessage();
+    }
+});
+</code></pre>
+
+<h3>2. ❌ Enlaces de descarga problemáticos</h3>
+<pre><code>
+// PROBLEMA ACTUAL:
+const htmlText = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
+    '&lt;a href="$2" download style="..."&gt;$1&lt;/a&gt;');
+
+// POSIBLES PROBLEMAS:
+- href="/download-quote/..." podría causar navegación
+- Falta target="_blank" para abrir en nueva ventana
+- Falta event.preventDefault() en click del enlace
+</code></pre>
+
+<h3>3. ❌ Form submit implícito</h3>
+<p>Si el input está dentro de un form (aunque no visible), Enter puede activar submit</p>
+
+<h3>4. ❌ Errores JavaScript no manejados</h3>
+<p>Excepciones pueden causar comportamientos inesperados</p>
+
+<hr>
+
+<h2>🛠️ SOLUCIONES PROPUESTAS (SIN DAÑAR CÓDIGO CORE):</h2>
+
+<div style="background: #f0f8ff; padding: 15px; border-left: 4px solid #007acc;">
+<h3>✅ SOLUCIÓN MÍNIMA - Solo agregar preventDefault:</h3>
+<pre><code>
+chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();  // ← AGREGAR SOLO ESTA LÍNEA
+        sendMessage();
+    }
+});
+</code></pre>
+</div>
+
+<div style="background: #f8fff0; padding: 15px; border-left: 4px solid #28a745;">
+<h3>✅ SOLUCIÓN COMPLETA - Mejorar enlaces de descarga:</h3>
+<pre><code>
+// Mejorar conversión de enlaces para evitar navegación
+const htmlText = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
+    '&lt;a href="$2" target="_blank" download style="..." onclick="event.stopPropagation();"&gt;$1&lt;/a&gt;');
+</code></pre>
+</div>
+
+<hr>
+
+<h2>🧪 CÓMO PROBAR LA SOLUCIÓN:</h2>
+<ol>
+    <li>Aplicar el preventDefault en el evento Enter</li>
+    <li>Solicitar cotización escribiendo: "¿Puedes enviarme una cotización oficial?"</li>
+    <li>Presionar Enter</li>
+    <li>Verificar que NO se refresque la página</li>
+    <li>Hacer click en el enlace de descarga del PDF</li>
+    <li>Verificar que se descargue sin refrescar la página</li>
+</ol>
+
+<script>
+console.log("🔍 Página de diagnóstico cargada");
+console.log("📋 Revisa las soluciones propuestas arriba");
+console.log("⚠️ NO se ha modificado código core");
+</script>
+
+</body>
+</html>

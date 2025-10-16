@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 PRUEBA DEL WIDGET SALESMIND</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+        
+        .test-step {
+            background: rgba(0, 255, 136, 0.1);
+            border-left: 4px solid #00ff88;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 5px;
+        }
+        
+        .code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        
+        .status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 255, 136, 0.9);
+            color: black;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+        }
+        
+        .widget-demo {
+            text-align: center;
+            margin: 2rem 0;
+            padding: 2rem;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="status">🟢 Servidor de Prueba Activo</div>
+    
+    <div class="test-container">
+        <h1>🧪 PRUEBA DEL WIDGET SALESMIND</h1>
+        
+        <div class="instructions">
+            <h2>🎯 Instrucciones de Prueba</h2>
+            <p>Esta página prueba el widget SalesMind sin afectar tu sistema principal.</p>
+        </div>
+        
+        <div class="test-step">
+            <h3>✅ Paso 1: Verificar el botón flotante</h3>
+            <p>Deberías ver un <strong>botón azul flotante</strong> en la esquina inferior derecha de esta página.</p>
+        </div>
+        
+        <div class="test-step">
+            <h3>🖱️ Paso 2: Abrir el chat</h3>
+            <p><strong>Haz clic en el botón azul</strong> para abrir la ventana de chat.</p>
+        </div>
+        
+        <div class="test-step">
+            <h3>💬 Paso 3: Probar mensajes</h3>
+            <p>Escribe estos mensajes de prueba:</p>
+            <ul>
+                <li><code>"hola"</code> - Para mensaje de bienvenida</li>
+                <li><code>"necesito una cotización"</code> - Para generar cotización con PDF</li>
+                <li><code>"información de productos"</code> - Para respuesta general</li>
+            </ul>
+        </div>
+        
+        <div class="test-step">
+            <h3>📄 Paso 4: Probar descarga</h3>
+            <p>Cuando aparezca el botón <strong>"Descargar Cotización"</strong>, haz clic para probar la descarga.</p>
+        </div>
+        
+        <div class="widget-demo">
+            <h2>👆 ¡El Widget está aquí! 👆</h2>
+            <p>Busca el botón azul flotante →</p>
+            <p><em>Si no lo ves, revisa la consola del navegador (F12)</em></p>
+        </div>
+        
+        <div class="instructions">
+            <h3>🔧 Configuración de Prueba:</h3>
+            <div class="code">
+&lt;script src="salesmind-widget.js" 
+        data-client-id="78e5f512-0a21-407b-819a-b5f02a091aac"
+        data-title="Asistente de Prueba"
+        data-subtitle="Testing Mode"
+        data-api-url="http://localhost:5001/chat-api"&gt;&lt;/script&gt;
+            </div>
+        </div>
+        
+        <div class="test-step">
+            <h3>✨ ¿Qué debería funcionar?</h3>
+            <ul>
+                <li>✅ Botón flotante responsivo</li>
+                <li>✅ Ventana de chat con animaciones</li>
+                <li>✅ Envío de mensajes con Enter</li>
+                <li>✅ Respuestas automáticas de la IA</li>
+                <li>✅ Indicador "escribiendo..."</li>
+                <li>✅ Botones de descarga de PDF</li>
+                <li>✅ Diseño responsivo</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 🚀 WIDGET CONFIGURADO PARA CLIENTE REAL -->
+    <script src="salesmind-widget.js" 
+            data-client-id="78e5f512-0a21-407b-819a-b5f02a091aac"
+            data-title="SalesMind Assistant"
+            data-subtitle="Consultor Inteligente"
+            data-api-url="http://127.0.0.1:5000/chat-api"></script>
+
+    <script>
+        // Verificar que el widget se cargó
+        setTimeout(() => {
+            const widget = document.getElementById('salesmind-widget');
+            if (widget) {
+                console.log('✅ Widget cargado correctamente');
+            } else {
+                console.error('❌ Error: Widget no encontrado');
+                alert('Error: El widget no se cargó. Revisa la consola.');
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

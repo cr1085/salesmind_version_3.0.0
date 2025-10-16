@@ -43,6 +43,32 @@ nav a {
     font-weight: 500;
 }
 
+/* Botón de descarga PDF */
+.pdf-download-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white !important;
+    padding: 12px 24px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    margin: 10px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.pdf-download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    color: white !important;
+}
+
+.pdf-download-btn:active {
+    transform: translateY(0);
+}
+
 /* Formularios */
 .form-container {
     background-color: #fff;

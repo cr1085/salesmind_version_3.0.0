@@ -1,15 +1,53 @@
-Flask
-Flask-Login
-python-dotenv
-requests
-gunicorn
-PyMuPDF
-sentence-transformers
-faiss-cpu
-numpy
-langchain
-langchain-community
-sentence-transformers
-langchain-google-genai
-python-telegram-bot
-twilio
+# === CORE FRAMEWORK ===
+Flask==2.3.3
+Flask-Login==0.6.3
+Flask-SQLAlchemy==3.0.5
+Flask-CORS==4.0.0
+waitress==2.1.2
+
+# === DATABASE ===
+SQLAlchemy==2.0.23
+psycopg2-binary==2.9.7
+sqlalchemy-utils==0.41.1
+
+# === CONFIGURATION ===
+python-dotenv==1.0.0
+nest_asyncio==1.5.8
+
+# === HTTP REQUESTS ===
+requests==2.31.0
+
+# === SYSTEM MONITORING ===
+psutil==5.9.6
+
+# === AI & EMBEDDINGS ===
+langchain==0.0.340
+langchain-community==0.0.1
+langchain-google-genai==0.0.5
+google-generativeai==0.3.2
+
+# === VECTOR SEARCH ===
+faiss-cpu==1.7.4
+numpy==1.24.4
+
+# === DOCUMENT PROCESSING ===
+PyMuPDF==1.23.8
+
+# === TELEGRAM INTEGRATION ===
+python-telegram-bot==20.6
+
+# === TEXT PROCESSING ===
+sentence-transformers==2.2.2
+
+# === ADDITIONAL INTEGRATIONS ===
+twilio==8.10.0
+
+# === COMERCIAL MODULE DEPENDENCIES ===
+reportlab==4.0.4
+Pillow==10.0.1
+Werkzeug==2.3.7
+Jinja2==3.1.2
+
+# === DEPRECATED/REMOVED ===
+# gunicorn  # Reemplazado por waitress para Windows
+# pickle5   # No necesario en Python 3.8+, usar pickle nativo

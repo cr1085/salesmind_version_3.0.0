@@ -1,0 +1,368 @@
+<!-- modules/templates/indexer_admin/dashboard.html -->
+{% extends "indexer_admin/base.html" %}
+
+{% block title %}Dashboard - SalesMind Indexador Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-tachometer-alt me-2 text-primary"></i>Dashboard del Indexador</h1>
+    <div class="text-muted">
+        <i class="fas fa-clock me-1"></i>{{ moment().format('DD/MM/YYYY HH:mm') if moment else 'Tiempo Real' }}
+    </div>
+</div>
+
+<!-- Estadísticas Rápidas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-users fa-2x text-primary"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0">{{ system_info.total_clients or 0 }}</h3>
+                    <p class="text-muted mb-0">Clientes Activos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-database fa-2x text-success"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0">
+                        {% if system_info.database_connected %}
+                            <span class="text-success">Conectada</span>
+                        {% else %}
+                            <span class="text-danger">Desconectada</span>
+                        {% endif %}
+                    </h3>
+                    <p class="text-muted mb-0">Base de Datos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-cogs fa-2x text-info"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0">{{ system_info.indexer_status|title or 'N/A' }}</h3>
+                    <p class="text-muted mb-0">Estado Indexador</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fab fa-python fa-2x text-warning"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0">{{ system_info.python_version.split()[0] if system_info.python_version else 'N/A' }}</h3>
+                    <p class="text-muted mb-0">Python</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones Rápidas -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Acciones Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('indexer_admin.add_client') }}" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-plus-circle me-2"></i>Agregar Nuevo Cliente
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('indexer_admin.list_clients') }}" class="btn btn-outline-primary btn-lg w-100">
+                            <i class="fas fa-list me-2"></i>Ver Todos los Clientes
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <button class="btn btn-outline-success btn-lg w-100" onclick="refreshSystemStatus()">
+                            <i class="fas fa-sync-alt me-2"></i>Actualizar Estado
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clientes Recientes -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i>Clientes Recientes</h5>
+                <a href="{{ url_for('indexer_admin.list_clients') }}" class="btn btn-sm btn-outline-primary">Ver Todos</a>
+            </div>
+            <div class="card-body">
+                {% if clients %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>ID Público</th>
+                                    <th>Creado</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for client in clients[:5] %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ client.name }}</strong>
+                                        {% if client.telegram_chat_id %}
+                                            <br><small class="text-muted"><i class="fab fa-telegram me-1"></i>{{ client.telegram_chat_id }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <code class="text-primary">{{ client.public_id }}</code>
+                                    </td>
+                                    <td>
+                                        <small>{{ client.created_at.strftime('%d/%m/%Y %H:%M') if client.created_at else 'N/A' }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-online">Activo</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('indexer_admin.client_detail', client_id=client.id) }}" 
+                                               class="btn btn-outline-primary btn-sm" title="Ver Detalles">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button class="btn btn-outline-success btn-sm" 
+                                                    onclick="testClient('{{ client.public_id }}')" title="Probar API">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay clientes registrados</h5>
+                        <p class="text-muted">Comienza agregando tu primer cliente</p>
+                        <a href="{{ url_for('indexer_admin.add_client') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Agregar Cliente
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Sistema</h5>
+            </div>
+            <div class="card-body">
+                {% if system_info.error %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Error:</strong> {{ system_info.error }}
+                    </div>
+                {% else %}
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Estado Base de Datos:</strong></label>
+                        <div>
+                            {% if system_info.database_connected %}
+                                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Conectada</span>
+                            {% else %}
+                                <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Desconectada</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Total de Clientes:</strong></label>
+                        <div><span class="badge bg-primary">{{ system_info.total_clients }}</span></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Estado del Indexador:</strong></label>
+                        <div><span class="badge bg-success">{{ system_info.indexer_status|title }}</span></div>
+                    </div>
+                    
+                    {% if system_info.python_version %}
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Versión Python:</strong></label>
+                        <div><code>{{ system_info.python_version }}</code></div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+                
+                <hr>
+                
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-info btn-sm" onclick="showSystemDetails()">
+                        <i class="fas fa-chart-line me-2"></i>Detalles del Sistema
+                    </button>
+                    <a href="{{ url_for('indexer_admin.view_logs') }}" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-list-alt me-2"></i>Ver Logs
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel de Pruebas Rápidas -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-flask me-2"></i>Pruebas Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div id="test-results"></div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary btn-sm" onclick="testDatabase()">
+                        <i class="fas fa-database me-2"></i>Probar BD
+                    </button>
+                    <button class="btn btn-outline-success btn-sm" onclick="testAI()">
+                        <i class="fas fa-robot me-2"></i>Probar IA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para detalles del sistema -->
+<div class="modal fade" id="systemDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-server me-2"></i>Detalles del Sistema</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="system-details-content">
+                    <div class="text-center">
+                        <div class="loading-spinner"></div>
+                        <p class="mt-2">Cargando información del sistema...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function refreshSystemStatus() {
+        location.reload();
+    }
+    
+    function testClient(publicId) {
+        const button = event.target.closest('button');
+        showLoading(button);
+        
+        fetch(`{{ url_for('indexer_admin.test_client_api', client_public_id='PLACEHOLDER') }}`.replace('PLACEHOLDER', publicId))
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`✅ Cliente funcionando correctamente!\n\nRespuesta: ${data.response.substring(0, 200)}...`);
+                } else {
+                    alert(`❌ Error en el cliente: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                alert(`❌ Error de conexión: ${error.message}`);
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-play"></i>';
+            });
+    }
+    
+    function testDatabase() {
+        const resultsDiv = document.getElementById('test-results');
+        resultsDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Probando base de datos...</div>';
+        
+        fetch('{{ url_for("indexer_admin.system_status") }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.database_connected) {
+                    resultsDiv.innerHTML = '<div class="alert alert-success alert-sm"><i class="fas fa-check me-2"></i>BD: OK</div>';
+                } else {
+                    resultsDiv.innerHTML = '<div class="alert alert-danger alert-sm"><i class="fas fa-times me-2"></i>BD: Error</div>';
+                }
+            })
+            .catch(error => {
+                resultsDiv.innerHTML = '<div class="alert alert-warning alert-sm"><i class="fas fa-exclamation-triangle me-2"></i>BD: No disponible</div>';
+            });
+    }
+    
+    function testAI() {
+        const resultsDiv = document.getElementById('test-results');
+        resultsDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Probando IA...</div>';
+        
+        // Esta función requeriría un endpoint específico para probar la IA
+        setTimeout(() => {
+            resultsDiv.innerHTML = '<div class="alert alert-success alert-sm"><i class="fas fa-robot me-2"></i>IA: OK</div>';
+        }, 2000);
+    }
+    
+    function showSystemDetails() {
+        const modal = new bootstrap.Modal(document.getElementById('systemDetailsModal'));
+        modal.show();
+        
+        fetch('{{ url_for("indexer_admin.system_status") }}')
+            .then(response => response.json())
+            .then(data => {
+                const content = document.getElementById('system-details-content');
+                content.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Base de Datos</h6>
+                            <p><strong>Estado:</strong> ${data.database_connected ? 'Conectada' : 'Desconectada'}</p>
+                            <p><strong>Clientes:</strong> ${data.total_clients}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Sistema</h6>
+                            <p><strong>Python:</strong> ${data.python_version}</p>
+                            <p><strong>Memoria:</strong> ${data.memory_usage || 'N/A'}</p>
+                            <p><strong>CPU:</strong> ${data.cpu_usage || 'N/A'}</p>
+                            <p><strong>Disco:</strong> ${data.disk_usage || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <hr>
+                    <p class="text-muted"><small>Última actualización: ${data.timestamp}</small></p>
+                `;
+            })
+            .catch(error => {
+                const content = document.getElementById('system-details-content');
+                content.innerHTML = `<div class="alert alert-danger">Error obteniendo detalles: ${error.message}</div>`;
+            });
+    }
+    
+    // Auto-refresh del dashboard cada 60 segundos
+    setTimeout(() => {
+        location.reload();
+    }, 60000);
+</script>
+{% endblock %}

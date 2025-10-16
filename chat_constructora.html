@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página de Prueba - Constructora Ejemplo</title>
+</head>
+<body>
+    <h1>Bienvenido a Constructora Ejemplo</h1>
+    <p>Tu nuevo hogar, más cerca de lo que imaginas.</p>
+    <style>
+        #chat-bubble {
+            position: fixed; bottom: 25px; right: 25px; background-color: #2e86c1;
+            color: white; width: 60px; height: 60px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease-in-out;
+        }
+        #chat-bubble:hover { transform: scale(1.1); }
+        #chat-window {
+            position: fixed; bottom: 100px; right: 25px; width: 350px;
+            height: 500px; background-color: #fff; border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3); display: none;
+            flex-direction: column; overflow: hidden; font-family: Arial, sans-serif;
+        }
+        #chat-header {
+            background-color: #2e86c1; color: white; padding: 15px;
+            font-weight: bold; text-align: center;
+        }
+        #chat-messages {
+            flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column;
+        }
+        .message {
+            padding: 10px 15px; border-radius: 20px; margin-bottom: 10px; max-width: 85%;
+            line-height: 1.4;
+        }
+        .user-message { background-color: #f1f0f0; align-self: flex-end; }
+        .bot-message { background-color: #2e86c1; color: white; align-self: flex-start; }
+        #chat-input-container { display: flex; border-top: 1px solid #eee; padding: 10px; }
+        #chat-input {
+            flex-grow: 1; border: 1px solid #ddd; border-radius: 20px;
+            padding: 10px 15px; outline: none; font-size: 14px;
+        }
+        #send-button {
+            background: #2e86c1; color: white; border: none; border-radius: 50%;
+            width: 40px; height: 40px; margin-left: 10px; cursor: pointer; font-size: 18px;
+        }
+    </style>
+    <div id="salesmind-widget-container">
+        <div id="chat-bubble">🏠</div>
+        <div id="chat-window">
+            <div id="chat-header">Asistente de Constructora Ejemplo</div>
+            <div id="chat-messages">
+                <div class="message bot-message">¡Hola! Soy el asistente de la constructora. ¿En qué puedo ayudarte?</div>
+            </div>
+            <div id="chat-input-container">
+                <input type="text" id="chat-input" placeholder="Escribe tu pregunta...">
+                <button id="send-button">➤</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // --- CONFIGURACIÓN ---
+        const API_HOST = "https://TU_DOMINIO_O_IP/chat-api"; // Cambia por la URL pública de tu VPS
+        const CLIENT_PUBLIC_ID = "AQUI_VA_EL_ID_PUBLICO_DEL_CLIENTE"; // Cambia por el ID real
+        // --- LÓGICA DEL CHAT ---
+        const chatBubble = document.getElementById('chat-bubble');
+        const chatWindow = document.getElementById('chat-window');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+        chatBubble.addEventListener('click', () => {
+            chatWindow.style.display = chatWindow.style.display === 'flex' ? 'none' : 'flex';
+        });
+        const sendMessage = async () => {
+            const messageText = chatInput.value.trim();
+            if (messageText === '') return;
+            appendMessage(messageText, 'user-message');
+            chatInput.value = '';
+            chatInput.disabled = true;
+            sendButton.disabled = true;
+            try {
+                const response = await fetch(`${API_HOST}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: messageText, clientId: CLIENT_PUBLIC_ID })
+                });
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                const data = await response.json();
+                appendMessage(data.reply, 'bot-message');
+            } catch (error) {
+                console.error('Error:', error);
+                appendMessage('Lo siento, hubo un problema de conexión.', 'bot-message');
+            } finally {
+                chatInput.disabled = false;
+                sendButton.disabled = false;
+                chatInput.focus();
+            }
+        };
+        sendButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+        function appendMessage(text, className) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', className);
+            msgDiv.textContent = text;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
+    </body>
+</html>

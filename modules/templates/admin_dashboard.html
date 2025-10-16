@@ -4,6 +4,28 @@
 <div class="admin-container">
     <h1 class="admin-title">Panel de Administración de LexIA Agent</h1>
     
+    <!-- Navegación de Administración -->
+    <div class="admin-nav" style="margin-bottom: 2rem;">
+        <div class="nav-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+            <a href="{{ url_for('indexer_admin.dashboard') }}" class="nav-card" 
+               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 1.5rem; border-radius: 10px; text-align: center; transition: transform 0.2s;">
+                <i class="fas fa-search fa-2x" style="margin-bottom: 0.5rem;"></i>
+                <h3 style="margin: 0; font-size: 1.2rem;">Panel del Indexador</h3>
+                <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">Gestionar clientes y documentos</p>
+            </a>
+            <div class="nav-card" style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 1.5rem; border-radius: 10px; text-align: center;">
+                <i class="fas fa-users fa-2x text-muted" style="margin-bottom: 0.5rem;"></i>
+                <h3 style="margin: 0; font-size: 1.2rem; color: #6c757d;">Usuarios</h3>
+                <p style="margin: 0.5rem 0 0 0; color: #6c757d;">Próximamente</p>
+            </div>
+            <div class="nav-card" style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 1.5rem; border-radius: 10px; text-align: center;">
+                <i class="fas fa-chart-bar fa-2x text-muted" style="margin-bottom: 0.5rem;"></i>
+                <h3 style="margin: 0; font-size: 1.2rem; color: #6c757d;">Reportes</h3>
+                <p style="margin: 0.5rem 0 0 0; color: #6c757d;">Próximamente</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Sección de Estadísticas -->
     <div class="stats-grid">
         <div class="stat-card">

@@ -1,0 +1,71 @@
+{
+  "timestamp": "2025-10-14T19:39:12.503993",
+  "overall_status": "excellent",
+  "checks": {
+    "flask_server": {
+      "status": "pass",
+      "message": "Servidor Flask funcionando correctamente",
+      "details": "Status: 200"
+    },
+    "database": {
+      "status": "pass",
+      "message": "Base de datos conectada - 9 clientes registrados",
+      "details": {
+        "client_count": 9
+      }
+    },
+    "google_api": {
+      "status": "pass",
+      "message": "API de Google funcionando - Vector dimensión: 768",
+      "details": {
+        "vector_dimension": 768
+      }
+    },
+    "clients_integrity": {
+      "status": "pass",
+      "message": "Todos los 9 clientes están correctamente configurados",
+      "details": {
+        "total_clients": 9,
+        "clients_ok": 9
+      }
+    },
+    "chat_functionality": {
+      "status": "warning",
+      "message": "Chat responde pero con mensaje de error genérico",
+      "details": {
+        "response": "Ocurrió un error al procesar tu solicitud. Por favor, contacta a un asesor."
+      }
+    },
+    "admin_panel": {
+      "status": "pass",
+      "message": "Panel administrativo accesible"
+    },
+    "pdf_generation": {
+      "status": "warning",
+      "message": "Sistema PDF disponible pero no detecta productos automáticamente"
+    },
+    "multilanguage": {
+      "status": "warning",
+      "message": "Solo 2/3 idiomas funcionando correctamente"
+    },
+    "extensions": {
+      "status": "pass",
+      "message": "Sistema de extensiones funcionando - 0 extensiones, 0 hooks",
+      "details": {
+        "extensions": [],
+        "hooks": {}
+      }
+    },
+    "core_files": {
+      "status": "pass",
+      "message": "Todos los 6 archivos core están presentes"
+    }
+  },
+  "repairs": {},
+  "errors": [],
+  "warnings": [
+    "chat_functionality: Chat responde pero con mensaje de error genérico",
+    "pdf_generation: Sistema PDF disponible pero no detecta productos automáticamente",
+    "multilanguage: Solo 2/3 idiomas funcionando correctamente"
+  ]
+}

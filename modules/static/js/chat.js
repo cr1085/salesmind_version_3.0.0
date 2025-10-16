@@ -267,12 +267,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const thinkingMessage = addMessage('LexIA está consultando...', 'ai', true);
 
         try {
-            // --- ¡LA CORRECCIÓN MÁS IMPORTANTE ESTÁ AQUÍ! ---
-            // La ruta es '/ask', sin '/api'. Esto debe coincidir con tu `routes.py`.
-            const response = await fetch('/ask', {
+            // --- ACTUALIZADO PARA USAR EL NUEVO ENDPOINT CON MULTILENGUAJE Y COTIZACIONES ---
+            // Usar el endpoint correcto con las nuevas funcionalidades
+            const response = await fetch('/chat-api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question: question })
+                body: JSON.stringify({ 
+                    message: question,
+                    clientId: window.CLIENT_ID || 'demo-client'  // Se puede configurar dinámicamente
+                })
             });
 
             // Eliminamos el mensaje de "Pensando..." para reemplazarlo por la respuesta final
@@ -290,7 +293,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            addMessage(data.answer, 'ai', false, data.sources);
+            
+            // Procesar respuesta con soporte para PDFs de cotización
+            let responseText = data.reply;
+            
+            // Detectar si hay enlaces de descarga de PDF
+            if (responseText.includes('Descargar Cotización PDF')) {
+                // Hacer los enlaces clickeables
+                responseText = responseText.replace(
+                    /\[Descargar Cotización PDF\]\(([^)]+)\)/g,
+                    '<a href="$1" target="_blank" class="pdf-download-btn">📄 Descargar Cotización PDF</a>'
+                );
+            }
+            
+            addMessage(responseText, 'ai', false, data.sources);
 
         } catch (error) {
             console.error('Error en fetch:', error);

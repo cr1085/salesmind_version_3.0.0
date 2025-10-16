@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página de clientes</title>
+</head>
+<body>
+
+    <h1>Bienvenido a Salesmind</h1>
+    <p>Tu asesor de confianza</p>
+
+    <style>
+        #chat-bubble {
+            position: fixed; bottom: 25px; right: 25px; background-color: #7a5c43;
+            color: white; width: 60px; height: 60px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease-in-out;
+        }
+        #chat-bubble:hover { transform: scale(1.1); }
+        #chat-window {
+            position: fixed; bottom: 100px; right: 25px; width: 350px;
+            height: 500px; background-color: #fff; border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3); display: none;
+            flex-direction: column; overflow: hidden; font-family: Arial, sans-serif;
+        }
+        #chat-header {
+            background-color: #7a5c43; color: white; padding: 15px;
+            font-weight: bold; text-align: center;
+        }
+        #chat-messages {
+            flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column;
+        }
+        .message {
+            padding: 10px 15px; border-radius: 20px; margin-bottom: 10px; max-width: 85%;
+            line-height: 1.4;
+        }
+        .user-message { background-color: #f1f0f0; align-self: flex-end; }
+        .bot-message { background-color: #7a5c43; color: white; align-self: flex-start; }
+        #chat-input-container { display: flex; border-top: 1px solid #eee; padding: 10px; }
+        #chat-input {
+            flex-grow: 1; border: 1px solid #ddd; border-radius: 20px;
+            padding: 10px 15px; outline: none; font-size: 14px;
+        }
+        #send-button {
+            background: #7a5c43; color: white; border: none; border-radius: 50%;
+            width: 40px; height: 40px; margin-left: 10px; cursor: pointer; font-size: 18px;
+        }
+    </style>
+    
+    <div id="salesmind-widget-container">
+        <div id="chat-bubble">☕</div>
+        <div id="chat-window">
+            <div id="chat-header">SalesMind - Asistente Inmobiliario</div>
+            <div id="chat-messages">
+                <div class="message bot-message">¡Hola! Soy SalesMind, tu asistente inmobiliario. Puedo ayudarte con información de propiedades y generar cotizaciones en PDF. ¿En qué puedo ayudarte?</div>
+            </div>
+            <div id="chat-input-container">
+                <input type="text" id="chat-input" placeholder="Escribe tu pregunta...">
+                <button id="send-button">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN ---
+        const API_HOST = "http://127.0.0.1:5000"; // La URL donde corre tu app Flask
+        const CLIENT_PUBLIC_ID = "78e5f512-0a21-407b-819a-b5f02a091aac"; // Cliente de prueba con cotizaciones
+
+        // --- LÓGICA DEL CHAT ---
+        const chatBubble = document.getElementById('chat-bubble');
+        const chatWindow = document.getElementById('chat-window');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+
+        chatBubble.addEventListener('click', () => {
+            chatWindow.style.display = chatWindow.style.display === 'flex' ? 'none' : 'flex';
+        });
+
+        const sendMessage = async () => {
+            const messageText = chatInput.value.trim();
+            if (messageText === '') return;
+            console.log('📤 Enviando mensaje:', messageText); // ✅ LOGGING
+            appendMessage(messageText, 'user-message');
+            chatInput.value = '';
+            chatInput.disabled = true;
+            sendButton.disabled = true;
+
+            try {
+                const response = await fetch(`${API_HOST}/chat-api`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: messageText, clientId: CLIENT_PUBLIC_ID })
+                });
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                const data = await response.json();
+                appendMessage(data.reply, 'bot-message');
+            } catch (error) {
+                console.error('Error:', error);
+                appendMessage('Lo siento, hubo un problema de conexión.', 'bot-message');
+            } finally {
+                chatInput.disabled = false;
+                sendButton.disabled = false;
+                chatInput.focus();
+            }
+        };
+
+        sendButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // ✅ PREVENIR REFRESH
+                sendMessage();
+            }
+        });
+
+        function appendMessage(text, className) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', className);
+            
+            // Permitir HTML solo para mensajes del bot (para enlaces de PDF)
+            if (className === 'bot-message') {
+                // Convertir enlaces de markdown a HTML
+                const htmlText = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" download style="color: #FFD700; text-decoration: underline;" target="_blank" onclick="event.preventDefault(); event.stopPropagation(); window.open(this.href, \'_blank\');">$1</a>');
+                msgDiv.innerHTML = htmlText;
+            } else {
+                msgDiv.textContent = text;
+            }
+            
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
+    </body>
+</html>

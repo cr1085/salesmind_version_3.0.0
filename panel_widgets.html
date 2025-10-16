@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Generador de Widgets - Panel de Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .panel h2 {
+            margin-bottom: 20px;
+            color: #fff;
+            font-size: 1.5rem;
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px 30px;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+        }
+
+        .btn-warning:hover {
+            box-shadow: 0 8px 25px rgba(255, 152, 0, 0.4);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #00BCD4, #0097A7);
+            box-shadow: 0 4px 15px rgba(0, 188, 212, 0.3);
+        }
+
+        .btn-info:hover {
+            box-shadow: 0 8px 25px rgba(0, 188, 212, 0.4);
+        }
+
+        .form-panel {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 20px;
+        }
+
+        .form-panel.active {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .client-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .client-item h4 {
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .client-item p {
+            margin: 5px 0;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            border-radius: 25px;
+            font-weight: 600;
+            transform: translateX(300px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .status.show {
+            transform: translateX(0);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Generador de Widgets SalesMind</h1>
+            <p>Panel de Control para Crear Widgets Personalizados</p>
+        </div>
+
+        <!-- Panel de Acciones Principales -->
+        <div class="panel">
+            <h2>🎯 Acciones Principales</h2>
+            <div class="buttons-grid">
+                <button class="btn btn-primary" onclick="listarClientes()">
+                    📋 Ver Todos los Clientes
+                </button>
+                
+                <button class="btn" onclick="generarTodos()">
+                    ⚡ Generar Todos los Widgets
+                </button>
+                
+                <button class="btn btn-warning" onclick="mostrarFormulario()">
+                    🆕 Agregar Nuevo Cliente
+                </button>
+                
+                <button class="btn btn-info" onclick="abrirPaginaEjemplo()">
+                    👁️ Ver Página de Ejemplo
+                </button>
+            </div>
+        </div>
+
+        <!-- Formulario para Nuevo Cliente -->
+        <div class="form-panel" id="formularioCliente">
+            <h2>🆕 Agregar Nuevo Cliente</h2>
+            <form id="clienteForm">
+                <div class="form-group">
+                    <label for="nombreCliente">📝 Nombre del Cliente:</label>
+                    <input type="text" id="nombreCliente" placeholder="Ej: Constructora ABC" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tituloAsistente">🤖 Título del Asistente:</label>
+                    <input type="text" id="tituloAsistente" placeholder="Ej: Asistente Constructora ABC">
+                </div>
+                
+                <div class="form-group">
+                    <label for="subtituloAsistente">💬 Subtítulo:</label>
+                    <input type="text" id="subtituloAsistente" placeholder="Ej: Cotizaciones y Consultas">
+                </div>
+                
+                <div class="form-group">
+                    <label for="servidorApi">🌐 Servidor API (opcional):</label>
+                    <input type="url" id="servidorApi" placeholder="https://tu-servidor.com/chat-api">
+                </div>
+                
+                <div class="buttons-grid">
+                    <button type="submit" class="btn">
+                        ✅ Crear Widget
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="cerrarFormulario()">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Panel de Resultados -->
+        <div class="results" id="resultados">
+            <h2>📊 Resultados</h2>
+            <div id="contenidoResultados"></div>
+        </div>
+    </div>
+
+    <!-- Notificación de Estado -->
+    <div class="status" id="status"></div>
+
+    <script>
+        // Mostrar notificación
+        function mostrarStatus(mensaje, tipo = 'success') {
+            const status = document.getElementById('status');
+            status.textContent = mensaje;
+            status.className = `status show ${tipo}`;
+            
+            setTimeout(() => {
+                status.classList.remove('show');
+            }, 4000);
+        }
+
+        // Mostrar formulario
+        function mostrarFormulario() {
+            const formulario = document.getElementById('formularioCliente');
+            formulario.classList.add('active');
+            document.getElementById('nombreCliente').focus();
+        }
+
+        // Cerrar formulario
+        function cerrarFormulario() {
+            const formulario = document.getElementById('formularioCliente');
+            formulario.classList.remove('active');
+            document.getElementById('clienteForm').reset();
+        }
+
+        // Mostrar resultados
+        function mostrarResultados(contenido) {
+            const resultados = document.getElementById('resultados');
+            const contenidoDiv = document.getElementById('contenidoResultados');
+            contenidoDiv.innerHTML = contenido;
+            resultados.classList.add('show');
+        }
+
+        // Listar clientes
+        async function listarClientes() {
+            mostrarStatus('📋 Cargando clientes...', 'info');
+            
+            try {
+                const response = await fetch('/generar-widgets', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accion: 'listar' })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    let contenido = '<h3>📋 Clientes Registrados</h3>';
+                    data.clientes.forEach((cliente, index) => {
+                        contenido += `
+                            <div class="client-item">
+                                <h4>${index + 1}. ${cliente.nombre}</h4>
+                                <p><strong>ID:</strong> ${cliente.id}</p>
+                                <p><strong>Título:</strong> ${cliente.titulo || 'N/A'}</p>
+                                <p><strong>Subtítulo:</strong> ${cliente.subtitulo || 'N/A'}</p>
+                            </div>
+                        `;
+                    });
+                    mostrarResultados(contenido);
+                    mostrarStatus(`✅ ${data.clientes.length} clientes cargados`);
+                } else {
+                    mostrarStatus('❌ Error cargando clientes', 'error');
+                }
+            } catch (error) {
+                mostrarStatus('❌ Error de conexión', 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        // Generar todos los widgets
+        async function generarTodos() {
+            mostrarStatus('⚡ Generando widgets...', 'info');
+            
+            try {
+                const response = await fetch('/generar-widgets', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accion: 'generar_todos' })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    let contenido = '<h3>🎉 Widgets Generados</h3>';
+                    data.resultados.forEach(resultado => {
+                        contenido += `
+                            <div class="client-item">
+                                <h4>✅ ${resultado.cliente}</h4>
+                                <p><strong>Archivo:</strong> ${resultado.archivo}</p>
+                                <p><strong>ID:</strong> ${resultado.id}</p>
+                                <p><strong>URL:</strong> <a href="${resultado.url}" target="_blank" style="color: #4CAF50;">${resultado.url}</a></p>
+                            </div>
+                        `;
+                    });
+                    mostrarResultados(contenido);
+                    mostrarStatus(`🎉 ${data.resultados.length} widgets generados!`);
+                } else {
+                    mostrarStatus('❌ Error generando widgets', 'error');
+                }
+            } catch (error) {
+                mostrarStatus('❌ Error de conexión', 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        // Agregar nuevo cliente
+        document.getElementById('clienteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                accion: 'agregar_cliente',
+                nombre: document.getElementById('nombreCliente').value,
+                titulo: document.getElementById('tituloAsistente').value,
+                subtitulo: document.getElementById('subtituloAsistente').value,
+                servidor_api: document.getElementById('servidorApi').value
+            };
+            
+            mostrarStatus('🆕 Creando cliente...', 'info');
+            
+            try {
+                const response = await fetch('/generar-widgets', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const resultado = data.resultado;
+                    const contenido = `
+                        <h3>✅ Cliente Creado Exitosamente</h3>
+                        <div class="client-item">
+                            <h4>${resultado.cliente}</h4>
+                            <p><strong>ID:</strong> ${resultado.id}</p>
+                            <p><strong>Archivo:</strong> ${resultado.archivo}</p>
+                            <p><strong>URL:</strong> <a href="${resultado.url}" target="_blank" style="color: #4CAF50;">${resultado.url}</a></p>
+                        </div>
+                    `;
+                    mostrarResultados(contenido);
+                    mostrarStatus('🎉 Cliente creado exitosamente!');
+                    cerrarFormulario();
+                } else {
+                    mostrarStatus('❌ Error creando cliente', 'error');
+                }
+            } catch (error) {
+                mostrarStatus('❌ Error de conexión', 'error');
+                console.error('Error:', error);
+            }
+        });
+
+        // Abrir página de ejemplo
+        function abrirPaginaEjemplo() {
+            window.open('pagina_cliente_SIMPLE.html', '_blank');
+            mostrarStatus('👁️ Abriendo página de ejemplo');
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            mostrarStatus('🚀 Panel de Control Listo', 'success');
+        });
+    </script>
+</body>
+</html>

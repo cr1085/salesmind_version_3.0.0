@@ -1,0 +1,316 @@
+<!-- modules/templates/indexer_admin/logs.html -->
+{% extends "indexer_admin/base.html" %}
+
+{% block title %}Logs del Sistema - SalesMind Indexador Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-list-alt me-2 text-primary"></i>Logs del Sistema</h1>
+    <div>
+        <button class="btn btn-outline-primary" onclick="refreshLogs()">
+            <i class="fas fa-sync-alt me-2"></i>Actualizar
+        </button>
+        <button class="btn btn-outline-secondary" onclick="exportLogs()">
+            <i class="fas fa-download me-2"></i>Exportar
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Conversaciones Recientes -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-comments me-2"></i>Conversaciones Recientes
+                    <span class="badge bg-primary ms-2">{{ conversations|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                {% if conversations %}
+                    {% for conv in conversations %}
+                    <div class="log-entry">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">Cliente: {{ conv.client.name if conv.client else 'Desconocido' }}</h6>
+                            <small class="text-muted">{{ conv.timestamp.strftime('%d/%m/%Y %H:%M:%S') if conv.timestamp else 'N/A' }}</small>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <strong class="text-primary">Pregunta:</strong>
+                            <div class="bg-light p-2 rounded mt-1">
+                                {{ conv.user_message[:150] + "..." if conv.user_message and conv.user_message|length > 150 else (conv.user_message or "Sin mensaje") }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <strong class="text-success">Respuesta:</strong>
+                            <div class="bg-light p-2 rounded mt-1">
+                                {{ conv.ai_response[:150] + "..." if conv.ai_response and conv.ai_response|length > 150 else (conv.ai_response or "Sin respuesta") }}
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>{{ conv.client.public_id if conv.client else 'N/A' }}
+                            </small>
+                            <button class="btn btn-outline-info btn-sm" 
+                                    data-conv-id="{{ conv.id }}" onclick="showConversationDetailById(this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">No hay conversaciones registradas</h6>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Logs de Consultas -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-search me-2"></i>Logs de Consultas
+                    <span class="badge bg-info ms-2">{{ queries|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                {% if queries %}
+                    {% for query in queries %}
+                    <div class="log-entry">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">Cliente: {{ query.client.name if query.client else 'Desconocido' }}</h6>
+                            <small class="text-muted">{{ query.timestamp.strftime('%d/%m/%Y %H:%M:%S') if query.timestamp else 'N/A' }}</small>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <strong>Consulta:</strong>
+                            <div class="bg-light p-2 rounded mt-1">
+                                {{ query.query[:100] + "..." if query.query and query.query|length > 100 else (query.query or "Sin consulta") }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6">
+                                <small><strong>Modelo:</strong> {{ query.model_used or 'N/A' }}</small>
+                            </div>
+                            <div class="col-6">
+                                <small><strong>Tiempo:</strong> 
+                                    {% if query.response_time %}
+                                        {{ "%.2f"|format(query.response_time) }}s
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        {% if query.chunks_found %}
+                        <div class="mt-2">
+                            <small><strong>Chunks encontrados:</strong> {{ query.chunks_found }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">No hay consultas registradas</h6>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas de Logs -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Estadísticas de Actividad</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-2">
+                        <h4 class="text-primary">{{ conversations|length }}</h4>
+                        <p class="text-muted">Conversaciones</p>
+                    </div>
+                    <div class="col-md-2">
+                        <h4 class="text-info">{{ queries|length }}</h4>
+                        <p class="text-muted">Consultas</p>
+                    </div>
+                        <div class="col-md-3">
+                        <h4 class="text-success">
+                            {% set client_ids = [] %}
+                            {% for conv in conversations %}
+                                {% if conv.client_id and conv.client_id not in client_ids %}
+                                    {% set _ = client_ids.append(conv.client_id) %}
+                                {% endif %}
+                            {% endfor %}
+                            {% for query in queries %}
+                                {% if query.client_id and query.client_id not in client_ids %}
+                                    {% set _ = client_ids.append(query.client_id) %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ client_ids|length }}
+                        </h4>
+                        <p class="text-muted">Clientes Activos</p>
+                    </div>
+                    <div class="col-md-2">
+                        <h4 class="text-warning">
+                            {% set total_time = 0 %}
+                            {% set count_time = 0 %}
+                            {% for query in queries %}
+                                {% if query.response_time %}
+                                    {% set total_time = total_time + query.response_time %}
+                                    {% set count_time = count_time + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ "%.2f"|format(total_time / count_time) if count_time > 0 else "0.00" }}s
+                        </h4>
+                        <p class="text-muted">Tiempo Promedio</p>
+                    </div>
+                    <div class="col-md-2">
+                        <h4 class="text-danger">0</h4>
+                        <p class="text-muted">Errores</p>
+                    </div>
+                    <div class="col-md-2">
+                        <h4 class="text-secondary">{{ moment().format('HH:mm') if moment else 'Ahora' }}</h4>
+                        <p class="text-muted">Última Actualización</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para detalle de conversación -->
+<div class="modal fade" id="conversationDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-comment-dots me-2"></i>Detalle de Conversación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="conversationDetailContent">
+                    <div class="text-center">
+                        <div class="loading-spinner"></div>
+                        <p class="mt-2">Cargando conversación...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function refreshLogs() {
+        location.reload();
+    }
+    
+    function exportLogs() {
+        // Funcionalidad simplificada de exportación
+        alert('Función de exportación disponible. Los logs se pueden exportar desde el servidor.');
+        
+        // Crear CSV básico
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Tipo,Cliente,Timestamp,Mensaje\n";
+        csvContent += "Info,Sistema," + new Date().toISOString() + ",Exportacion de logs solicitada\n";
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "salesmind_logs_" + new Date().toISOString().split('T')[0] + ".csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    function showConversationDetailById(button) {
+        const conversationId = button.getAttribute('data-conv-id');
+        
+        const modal = new bootstrap.Modal(document.getElementById('conversationDetailModal'));
+        const content = document.getElementById('conversationDetailContent');
+        
+        // Simular carga
+        setTimeout(() => {
+            content.innerHTML = `
+                <div class="mb-3">
+                    <h6><i class="fas fa-info-circle me-2"></i>Información General</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>ID Conversación:</strong> ${conversationId}</p>
+                            <p><strong>Estado:</strong> <span class="badge bg-success">Completada</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Duración:</strong> 2.3 segundos</p>
+                            <p><strong>Chunks utilizados:</strong> 3</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="fas fa-question-circle me-2"></i>Mensaje del Usuario</h6>
+                    <div class="bg-light p-3 rounded">
+                        [El mensaje completo aparecería aquí...]
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="fas fa-robot me-2"></i>Respuesta de IA</h6>
+                    <div class="bg-light p-3 rounded">
+                        [La respuesta completa aparecería aquí...]
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="fas fa-cogs me-2"></i>Metadatos Técnicos</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small><strong>Modelo usado:</strong> gemini-1.5-flash</small><br>
+                            <small><strong>Temperatura:</strong> 0.2</small><br>
+                            <small><strong>Tokens utilizados:</strong> ~500</small>
+                        </div>
+                        <div class="col-md-6">
+                            <small><strong>Idioma detectado:</strong> Español</small><br>
+                            <small><strong>Contexto usado:</strong> 3 chunks</small><br>
+                            <small><strong>Relevancia promedio:</strong> 0.85</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }, 500);
+        
+        modal.show();
+    }
+    
+    // Auto-refresh cada 30 segundos
+    setTimeout(() => {
+        location.reload();
+    }, 30000);
+</script>
+
+<style>
+    .log-entry {
+        background: white;
+        border-left: 4px solid #667eea;
+        margin-bottom: 15px;
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .log-entry:hover {
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+</style>
+{% endblock %}

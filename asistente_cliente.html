@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente Comercial IA</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f23;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* Fondo animado futurista */
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            z-index: -2;
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(64, 150, 255, 0.6);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(-50px);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) translateX(50px);
+                opacity: 0;
+            }
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(64, 150, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(64, 150, 255, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+        }
+
+        .main-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Panel lateral futurista */
+        .sidebar {
+            width: 350px;
+            background: rgba(15, 15, 35, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 2px solid rgba(64, 150, 255, 0.2);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 50px rgba(64, 150, 255, 0.1);
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid rgba(64, 150, 255, 0.2);
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #4096ff, #40e0d0);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(64, 150, 255, 0.4);
+        }
+
+        .logo::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid rgba(64, 150, 255, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.2); opacity: 0; }
+        }
+
+        .logo i {
+            font-size: 35px;
+            color: white;
+        }
+
+        .brand-name {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4096ff, #40e0d0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .brand-subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 300;
+        }
+
+        .stats-section {
+            margin-bottom: 30px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+        }
+
+        .stat-value {
+            color: #4096ff;
+            font-weight: 600;
+        }
+
+        /* Área de chat principal */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .chat-header {
+            padding: 30px 40px;
+            background: rgba(15, 15, 35, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(64, 150, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(64, 150, 255, 0.5);
+            border-radius: 3px;
+        }
+
+        .message {
+            margin-bottom: 25px;
+            animation: slideInUp 0.5s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-message {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .user-message .message-content {
+            background: linear-gradient(135deg, #4096ff, #0066cc);
+            color: white;
+            padding: 18px 24px;
+            border-radius: 25px 25px 8px 25px;
+            max-width: 70%;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(64, 150, 255, 0.3);
+        }
+
+        .bot-message {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .bot-avatar {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #4096ff, #40e0d0);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+
+        .bot-avatar i {
+            color: white;
+            font-size: 18px;
+        }
+
+        .bot-message .message-content {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(64, 150, 255, 0.2);
+            padding: 18px 24px;
+            border-radius: 25px 25px 25px 8px;
+            max-width: 80%;
+            backdrop-filter: blur(10px);
+            line-height: 1.6;
+        }
+
+        .input-area {
+            padding: 30px 40px;
+            background: rgba(15, 15, 35, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(64, 150, 255, 0.2);
+        }
+
+        .input-container {
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(64, 150, 255, 0.3);
+            border-radius: 25px;
+            padding: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .input-container:focus-within {
+            border-color: #4096ff;
+            box-shadow: 0 0 30px rgba(64, 150, 255, 0.2);
+        }
+
+        #chatInput {
+            flex: 1;
+            padding: 15px 20px;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: white;
+            font-size: 16px;
+        }
+
+        #chatInput::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        #sendButton {
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #4096ff, #0066cc);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        #sendButton:hover:not(:disabled) {
+            background: linear-gradient(135deg, #0066cc, #004499);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(64, 150, 255, 0.4);
+        }
+
+        #sendButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 20px 0;
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+        }
+
+        .typing-dots {
+            display: inline-flex;
+            gap: 4px;
+            margin-left: 10px;
+        }
+
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: #4096ff;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(1) { animation-delay: 0s; }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-15px); }
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 5px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(135deg, #00cc6a, #009954);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.4);
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Notificaciones modernas */
+        .notification {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            padding: 15px 25px;
+            background: rgba(15, 15, 35, 0.95);
+            border: 1px solid rgba(64, 150, 255, 0.3);
+            border-radius: 15px;
+            color: white;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transform: translateX(400px);
+            transition: all 0.4s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -350px;
+                z-index: 1000;
+                transition: left 0.3s ease;
+            }
+            
+            .sidebar.open {
+                left: 0;
+            }
+            
+            .chat-area {
+                width: 100%;
+            }
+            
+            .chat-messages {
+                padding: 20px;
+            }
+            
+            .input-area {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+    <div class="particles" id="particles"></div>
+    <div class="grid-overlay"></div>
+
+    <div class="main-container">
+        <!-- Panel lateral -->
+        <aside class="sidebar">
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="brand-name">AsistenteIA</div>
+                <div class="brand-subtitle">Consultor Digital Inteligente</div>
+            </div>
+            
+            <div class="stats-section">
+                <div class="stat-item">
+                    <span class="stat-label">Estado del Sistema</span>
+                    <span class="stat-value">Activo</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Tiempo de Respuesta</span>
+                    <span class="stat-value">< 2s</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Consultas Hoy</span>
+                    <span class="stat-value" id="queryCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Precisión</span>
+                    <span class="stat-value">99.2%</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Área de chat principal -->
+        <main class="chat-area">
+            <header class="chat-header">
+                <div>
+                    <h1 style="font-size: 24px; margin-bottom: 5px;">Consultor Digital</h1>
+                    <p style="color: rgba(255,255,255,0.7); font-size: 14px;">Asistente especializado en soluciones comerciales</p>
+                </div>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span style="color: #00ff88; font-weight: 600;">En línea</span>
+                </div>
+            </header>
+
+            <div class="chat-messages" id="chatMessages"></div>
+            
+            <div class="typing-indicator" id="typingIndicator">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div class="bot-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <span>El asistente está procesando su consulta</span>
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-container">
+                    <input type="text" id="chatInput" placeholder="Escriba su consulta o solicitud..." />
+                    <button id="sendButton">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Enviar</span>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 🔧 CONFIGURACIÓN DEL CLIENTE - CAMBIAR AQUÍ EL ID
+        const CLIENT_CONFIG = {
+            CLIENT_ID: '78e5f512-0a21-407b-819a-b5f02a091aac', // ⚠️ CAMBIAR POR ID REAL DEL CLIENTE
+            API_URL: 'http://127.0.0.1:5000/chat-api', // ⚠️ CAMBIAR POR URL REAL
+            CLIENT_NAME: 'Cliente Demo' // ⚠️ CAMBIAR POR NOMBRE REAL
+        };
+        
+        // Variables globales
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const queryCountElement = document.getElementById('queryCount');
+        
+        let isProcessing = false;
+        let queryCount = 0;
+
+        // Crear partículas animadas
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.width = particle.style.height = Math.random() * 4 + 2 + 'px';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Agregar mensaje al chat
+        function addMessage(text, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            
+            if (type === 'bot') {
+                messageDiv.innerHTML = `
+                    <div class="bot-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        ${processMessageContent(text)}
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="message-content">${text}</div>
+                `;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Procesar contenido del mensaje (enlaces de descarga)
+        function processMessageContent(text) {
+            return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
+                '<button class="download-btn" onclick="downloadPDF(\'$2\', \'$1\')" type="button"><i class="fas fa-download"></i> $1</button>'
+            );
+        }
+
+        // Descargar PDF
+        function downloadPDF(url, fileName) {
+            showNotification('📥 Iniciando descarga...', 'info');
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName + '.pdf';
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            setTimeout(() => {
+                showNotification('✅ Archivo descargado correctamente', 'success');
+            }, 1500);
+        }
+
+        // Mostrar notificación
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            
+            const colors = {
+                success: 'rgba(0, 255, 136, 0.2)',
+                error: 'rgba(255, 64, 64, 0.2)',
+                info: 'rgba(64, 150, 255, 0.2)'
+            };
+            
+            notification.style.borderColor = colors[type] || colors.info;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => document.body.removeChild(notification), 400);
+            }, 4000);
+        }
+
+        // Enviar mensaje
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message || isProcessing) return;
+
+            isProcessing = true;
+            queryCount++;
+            queryCountElement.textContent = queryCount;
+            
+            // Agregar mensaje del usuario
+            addMessage(message, 'user');
+            chatInput.value = '';
+            
+            // Actualizar UI
+            chatInput.disabled = true;
+            sendButton.disabled = true;
+            sendButton.innerHTML = '<div class="loading-spinner"></div><span>Procesando...</span>';
+            typingIndicator.style.display = 'block';
+
+            try {
+                const response = await fetch(CLIENT_CONFIG.API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        clientId: CLIENT_CONFIG.CLIENT_ID
+                    })
+                });
+
+                const data = await response.json();
+                
+                // Simular tiempo de procesamiento
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                typingIndicator.style.display = 'none';
+                
+                if (data.reply) {
+                    addMessage(data.reply, 'bot');
+                    showNotification('✅ Respuesta generada', 'success');
+                } else {
+                    addMessage('Disculpe, no pude procesar su consulta en este momento. Por favor, inténtelo nuevamente.', 'bot');
+                    showNotification('⚠️ Error en el procesamiento', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                typingIndicator.style.display = 'none';
+                addMessage('Se ha producido un error de conexión. Por favor, verifique su conexión a internet e inténtelo nuevamente.', 'bot');
+                showNotification('❌ Error de conexión', 'error');
+            } finally {
+                isProcessing = false;
+                chatInput.disabled = false;
+                sendButton.disabled = false;
+                sendButton.innerHTML = '<i class="fas fa-paper-plane"></i><span>Enviar</span>';
+                chatInput.focus();
+            }
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            
+            setTimeout(() => {
+                addMessage(`¡Bienvenido! Soy su asistente digital especializado en soluciones comerciales. Estoy aquí para ayudarle con cotizaciones, consultas técnicas y estrategias de negocio. ¿En qué puedo asistirle hoy?`, 'bot');
+            }, 1000);
+            
+            chatInput.focus();
+            showNotification('🤖 Sistema inicializado correctamente', 'success');
+        });
+    </script>
+</body>
+</html>

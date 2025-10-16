@@ -1,0 +1,393 @@
+<!-- modules/templates/indexer_admin/clients.html -->
+{% extends "indexer_admin/base.html" %}
+
+{% block title %}Clientes - SalesMind Indexador Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-users me-2 text-primary"></i>Gestión de Clientes</h1>
+    <a href="{{ url_for('indexer_admin.add_client') }}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Agregar Cliente
+    </a>
+</div>
+
+{% if clients_data %}
+    <div class="row">
+        {% for client_info in clients_data %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ client_info.client.name }}</h5>
+                    {% if client_info.stats %}
+                        <span class="badge bg-success">Activo</span>
+                    {% elif client_info.error %}
+                        <span class="badge bg-warning">Con Errores</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Sin Datos</span>
+                    {% endif %}
+                </div>
+                
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>ID Público:</strong></label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" value="{{ client_info.client.public_id }}" readonly>
+                            <button class="btn btn-outline-secondary" onclick="copyToClipboard('{{ client_info.client.public_id }}')" title="Copiar">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {% if client_info.client.telegram_chat_id %}
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Telegram ID:</strong></label>
+                        <div><code>{{ client_info.client.telegram_chat_id }}</code></div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Creado:</strong></label>
+                        <div>{{ client_info.client.created_at.strftime('%d/%m/%Y %H:%M') if client_info.client.created_at else 'N/A' }}</div>
+                    </div>
+                    
+                    {% if client_info.stats and 'error' not in client_info.stats %}
+                        <div class="mb-3">
+                            <h6><i class="fas fa-chart-bar me-2"></i>Estadísticas:</h6>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <strong>{{ client_info.stats.documents.total_documents }}</strong>
+                                        <small class="d-block text-muted">Documentos</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <strong>{{ client_info.stats.vectors.total_embeddings }}</strong>
+                                        <small class="d-block text-muted">Vectores</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <strong>{{ "%.1f"|format(client_info.stats.vectors.total_size_mb) }}MB</strong>
+                                        <small class="d-block text-muted">Tamaño</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    {% if client_info.error %}
+                        <div class="alert alert-warning alert-sm">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <small>{{ client_info.error }}</small>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-footer">
+                    <div class="btn-group w-100">
+                        <a href="{{ url_for('indexer_admin.client_detail', client_id=client_info.client.id) }}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i>Ver
+                        </a>
+                        
+                        <button class="btn btn-outline-success btn-sm" 
+                                onclick="testClient('{{ client_info.client.public_id }}', this)">
+                            <i class="fas fa-play me-1"></i>Probar
+                        </button>
+                        
+                        <button class="btn btn-outline-warning btn-sm" 
+                                data-client-id="{{ client_info.client.id }}" onclick="reindexClientById(this)">
+                            <i class="fas fa-sync-alt me-1"></i>Re-indexar
+                        </button>
+                        
+                        <button class="btn btn-outline-info btn-sm" 
+                                data-client-id="{{ client_info.client.id }}" 
+                                data-client-name="{{ client_info.client.name }}" onclick="showUploadModalById(this)">
+                            <i class="fas fa-upload me-1"></i>Subir
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Información resumida -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Resumen General</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h4 class="text-primary">{{ clients_data|length }}</h4>
+                            <p class="text-muted">Total Clientes</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-success">
+                                {{ clients_data|selectattr('stats')|list|length }}
+                            </h4>
+                            <p class="text-muted">Clientes Activos</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-info">
+                                {% set total_docs = 0 %}
+                                {% for client_info in clients_data %}
+                                    {% if client_info.stats and client_info.stats.documents %}
+                                        {% set total_docs = total_docs + client_info.stats.documents.total_documents %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ total_docs }}
+                            </h4>
+                            <p class="text-muted">Documentos Totales</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-warning">
+                                {% set total_size = 0 %}
+                                {% for client_info in clients_data %}
+                                    {% if client_info.stats and client_info.stats.vectors %}
+                                        {% set total_size = total_size + client_info.stats.vectors.total_size_mb %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ "%.1f"|format(total_size) }}MB
+                            </h4>
+                            <p class="text-muted">Tamaño Total</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+{% else %}
+    <!-- Estado vacío -->
+    <div class="text-center py-5">
+        <i class="fas fa-users fa-5x text-muted mb-4"></i>
+        <h3 class="text-muted">No hay clientes registrados</h3>
+        <p class="text-muted mb-4">Comienza agregando tu primer cliente para empezar a indexar documentos</p>
+        <a href="{{ url_for('indexer_admin.add_client') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus me-2"></i>Agregar Primer Cliente
+        </a>
+    </div>
+{% endif %}
+
+<!-- Modal para subir documentos -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-upload me-2"></i>Subir Documentos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Cliente:</label>
+                        <div id="clientName" class="fw-bold"></div>
+                        <input type="hidden" id="clientId">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="documents" class="form-label">Seleccionar Documentos:</label>
+                        <input type="file" class="form-control" id="documents" name="documents" 
+                               multiple accept=".pdf,.txt,.doc,.docx">
+                        <div class="form-text">Formatos soportados: PDF, TXT, DOC, DOCX</div>
+                    </div>
+                    
+                    <div id="uploadProgress" class="d-none">
+                        <div class="progress mb-2">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div class="text-center">
+                            <span class="text-muted">Procesando documentos...</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="uploadDocuments()">
+                    <i class="fas fa-upload me-2"></i>Subir Documentos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para resultados de pruebas -->
+<div class="modal fade" id="testResultModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-flask me-2"></i>Resultado de Prueba</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="testResultContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            // Mostrar feedback visual
+            const button = event.target.closest('button');
+            const originalIcon = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check text-success"></i>';
+            setTimeout(() => {
+                button.innerHTML = originalIcon;
+            }, 1000);
+        });
+    }
+    
+    function testClient(publicId, button) {
+        const originalContent = button.innerHTML;
+        button.innerHTML = '<span class="loading-spinner"></span>';
+        button.disabled = true;
+        
+        const testUrl = '{{ url_for("indexer_admin.test_client_api", client_public_id="PLACEHOLDER") }}'.replace('PLACEHOLDER', publicId);
+        
+        fetch(testUrl)
+            .then(response => response.json())
+            .then(data => {
+                const modal = new bootstrap.Modal(document.getElementById('testResultModal'));
+                const content = document.getElementById('testResultContent');
+                
+                if (data.success) {
+                    content.innerHTML = `
+                        <div class="alert alert-success">
+                            <h6><i class="fas fa-check-circle me-2"></i>Prueba Exitosa</h6>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Pregunta:</strong></label>
+                            <div class="bg-light p-2 rounded">${data.question}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Respuesta:</strong></label>
+                            <div class="bg-light p-2 rounded" style="max-height: 300px; overflow-y: auto;">
+                                ${data.response}
+                            </div>
+                        </div>
+                        <div class="text-muted">
+                            <small>Cliente ID: ${data.client_id} | Timestamp: ${data.timestamp}</small>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Error en la Prueba</h6>
+                            <p class="mb-0">${data.error}</p>
+                        </div>
+                        <div class="text-muted">
+                            <small>Cliente ID: ${data.client_id} | Timestamp: ${data.timestamp}</small>
+                        </div>
+                    `;
+                }
+                
+                modal.show();
+            })
+            .catch(error => {
+                alert(`❌ Error de conexión: ${error.message}`);
+            })
+            .finally(() => {
+                button.innerHTML = originalContent;
+                button.disabled = false;
+            });
+    }
+    
+    function reindexClientById(button) {
+        const clientId = button.getAttribute('data-client-id');
+        if (!confirm('¿Estás seguro de que quieres re-indexar este cliente? Esto puede tomar varios minutos.')) {
+            return;
+        }
+        
+        const originalContent = button.innerHTML;
+        button.innerHTML = '<span class="loading-spinner"></span>';
+        button.disabled = true;
+        
+        const url = '{{ url_for("indexer_admin.reindex_client", client_id="0") }}'.replace('0', clientId);
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    location.reload();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert(`❌ Error: ${error.message}`);
+            })
+            .finally(() => {
+                button.innerHTML = originalContent;
+                button.disabled = false;
+            });
+    }
+    
+    function showUploadModalById(button) {
+        const clientId = button.getAttribute('data-client-id');
+        const clientName = button.getAttribute('data-client-name');
+        document.getElementById('clientId').value = clientId;
+        document.getElementById('clientName').textContent = clientName;
+        const modal = new bootstrap.Modal(document.getElementById('uploadModal'));
+        modal.show();
+    }
+    
+    function uploadDocuments() {
+        const clientId = document.getElementById('clientId').value;
+        const filesInput = document.getElementById('documents');
+        const files = filesInput.files;
+        
+        if (files.length === 0) {
+            alert('Por favor selecciona al menos un archivo');
+            return;
+        }
+        
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('documents', files[i]);
+        }
+        
+        // Mostrar progreso
+        const progressDiv = document.getElementById('uploadProgress');
+        progressDiv.classList.remove('d-none');
+        
+        const uploadUrl = '{{ url_for("indexer_admin.upload_documents", client_id="0") }}'.replace('0', clientId);
+        
+        fetch(uploadUrl, {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                progressDiv.classList.add('d-none');
+                
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
+                    location.reload(); // Refrescar para mostrar nuevas estadísticas
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            })
+            .catch(error => {
+                progressDiv.classList.add('d-none');
+                alert(`❌ Error: ${error.message}`);
+            });
+    }
+</script>
+{% endblock %}

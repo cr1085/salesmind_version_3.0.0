@@ -1,5 +1,3 @@
-import sqlite3
-from config import Config
 from collections import defaultdict
 from flask import Blueprint, render_template, redirect, url_for
 from flask_login import current_user, login_required
@@ -28,19 +26,32 @@ def manual():
 @main_bp.route('/conversations')
 @login_required
 def conversations_dashboard():
-    conn = sqlite3.connect(Config.DATABASE_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    """
+    Dashboard de conversaciones - MIGRADO A POSTGRESQL
+    """
+    from ..models import Conversation, Client
     
-    # Obtenemos todos los mensajes ordenados por fecha
-    cursor.execute("SELECT * FROM conversations ORDER BY timestamp ASC")
-    messages = cursor.fetchall()
-    conn.close()
+    # Obtener todas las conversaciones desde PostgreSQL
+    conversations_query = Conversation.query.join(Client).order_by(Conversation.timestamp.asc()).all()
     
-    # Agrupamos los mensajes por chat_id para separar las conversaciones
-    conversations = defaultdict(list)
-    for msg in messages:
-        conversations[msg['chat_id']].append(dict(msg))
+    # Agrupar por cliente y chat_id
+    conversations = defaultdict(lambda: {
+        'client_name': '',
+        'messages': []
+    })
+    
+    for conv in conversations_query:
+        key = f"{conv.client.name}_{conv.chat_id}"
+        conversations[key]['client_name'] = conv.client.name
+        conversations[key]['messages'].append({
+            'id': conv.id,
+            'chat_id': conv.chat_id,
+            'sender': conv.sender,
+            'message_text': conv.message_text,
+            'timestamp': conv.timestamp,
+            'platform': conv.platform,
+            'message_type': conv.message_type
+        })
         
     return render_template('conversations_dashboard.html', conversations=conversations)
 # --- FIN DE LA NUEVA RUTA ---

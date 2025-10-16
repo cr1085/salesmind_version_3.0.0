@@ -1,0 +1,26 @@
+[
+  {
+    "id": "constructora-horizonte-2024",
+    "nombre": "Constructora Horizonte",
+    "titulo": "Asistente Inmobiliario Horizonte",
+    "subtitulo": "Cotizaciones y Proyectos"
+  },
+  {
+    "id": "cafe-del-sol-001",
+    "nombre": "Café del Sol", 
+    "titulo": "Asistente Café del Sol",
+    "subtitulo": "Menú y Reservas"
+  },
+  {
+    "id": "grupo-manotas-corp-2024",
+    "nombre": "Grupo Manotas",
+    "titulo": "Consultor Empresarial Manotas", 
+    "subtitulo": "Soluciones Corporativas"
+  },
+  {
+    "id": "inmobiliaria-premium-vip",
+    "nombre": "Inmobiliaria Premium",
+    "titulo": "Asistente Premium Inmobiliario",
+    "subtitulo": "Propiedades Exclusivas"
+  }
+]

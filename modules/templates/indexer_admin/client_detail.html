@@ -1,0 +1,438 @@
+<!-- modules/templates/indexer_admin/client_detail.html -->
+{% extends "indexer_admin/base.html" %}
+
+{% block title %}{{ client.name }} - Detalle Cliente{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('indexer_admin.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('indexer_admin.list_clients') }}">Clientes</a></li>
+                <li class="breadcrumb-item active">{{ client.name }}</li>
+            </ol>
+        </nav>
+        <h1><i class="fas fa-building me-2 text-primary"></i>{{ client.name }}</h1>
+    </div>
+    <div>
+        <button class="btn btn-success" onclick="testClient('{{ client.public_id }}')">
+            <i class="fas fa-play me-2"></i>Probar Cliente
+        </button>
+        <button class="btn btn-warning" onclick="reindexClient()">
+            <i class="fas fa-sync-alt me-2"></i>Re-indexar
+        </button>
+    </div>
+</div>
+
+<!-- Información básica -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información Básica</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label"><strong>Nombre:</strong></label>
+                    <div>{{ client.name }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label"><strong>ID Público:</strong></label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" value="{{ client.public_id }}" readonly>
+                        <button class="btn btn-outline-secondary" onclick="copyToClipboard('{{ client.public_id }}')" title="Copiar">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label"><strong>ID Interno:</strong></label>
+                    <div><code>{{ client.id }}</code></div>
+                </div>
+                
+                {% if client.telegram_chat_id %}
+                <div class="mb-3">
+                    <label class="form-label"><strong>Telegram ID:</strong></label>
+                    <div><code>{{ client.telegram_chat_id }}</code></div>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <label class="form-label"><strong>Creado:</strong></label>
+                    <div>{{ client.created_at.strftime('%d/%m/%Y %H:%M:%S') if client.created_at else 'N/A' }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label"><strong>Estado:</strong></label>
+                    <div>
+                        {% if stats and 'error' not in stats %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-warning">Con Errores</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        {% if stats and 'error' not in stats %}
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-file-alt fa-2x text-primary mb-2"></i>
+                        <h3 class="mb-0">{{ stats.documents.total_documents }}</h3>
+                        <p class="text-muted mb-0">Documentos</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-vector-square fa-2x text-success mb-2"></i>
+                        <h3 class="mb-0">{{ stats.vectors.total_embeddings }}</h3>
+                        <p class="text-muted mb-0">Embeddings</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-database fa-2x text-info mb-2"></i>
+                        <h3 class="mb-0">{{ "%.1f"|format(stats.vectors.total_size_mb) }}MB</h3>
+                        <p class="text-muted mb-0">Tamaño Total</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-comments fa-2x text-warning mb-2"></i>
+                        <h3 class="mb-0">{{ stats.conversations.total }}</h3>
+                        <p class="text-muted mb-0">Conversaciones</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Error obteniendo estadísticas:</strong>
+                    {{ stats.error if stats else 'Información no disponible' }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Índices FAISS -->
+{% if stats and 'error' not in stats and stats.faiss.count > 0 %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-search me-2"></i>Índices FAISS</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Vectores</th>
+                        <th>Dimensión</th>
+                        <th>Tipo</th>
+                        <th>Estado</th>
+                        <th>Creado</th>
+                        <th>Actualizado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for index in stats.faiss.indexes %}
+                    <tr>
+                        <td><code>{{ index.name }}</code></td>
+                        <td>{{ index.vectors }}</td>
+                        <td>{{ index.dimension }}</td>
+                        <td>{{ index.type }}</td>
+                        <td>
+                            {% if index.active %}
+                                <span class="badge bg-success">Activo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td><small>{{ index.created if index.created else 'N/A' }}</small></td>
+                        <td><small>{{ index.updated if index.updated else 'N/A' }}</small></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Documentos -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-folder-open me-2"></i>Documentos ({{ documents|length }})</h5>
+        <button class="btn btn-primary btn-sm" onclick="showUploadModal()">
+            <i class="fas fa-plus me-2"></i>Agregar Documentos
+        </button>
+    </div>
+    <div class="card-body">
+        {% if documents and 'error' not in documents[0] %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th>Tamaño</th>
+                            <th>Subido</th>
+                            <th>Procesado</th>
+                            <th>Estado</th>
+                            <th>Vista Previa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in documents %}
+                        <tr>
+                            <td>
+                                <i class="fas fa-file-{{ 'pdf' if doc.file_type == 'pdf' else 'alt' }} me-2"></i>
+                                <strong>{{ doc.filename }}</strong>
+                            </td>
+                            <td><span class="badge bg-secondary">{{ doc.file_type.upper() }}</span></td>
+                            <td>{{ doc.file_size_mb }} MB</td>
+                            <td><small>{{ doc.upload_date if doc.upload_date else 'N/A' }}</small></td>
+                            <td><small>{{ doc.processed_date if doc.processed_date else 'N/A' }}</small></td>
+                            <td>
+                                {% if doc.is_processed %}
+                                    <span class="badge bg-success">Procesado</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if doc.text_preview %}
+                                    <button class="btn btn-outline-info btn-sm" 
+                                            onclick="showTextPreview('{{ doc.filename }}', '{{ doc.text_preview|safe }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                {% else %}
+                                    <span class="text-muted">Sin texto</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No hay documentos</h5>
+                <p class="text-muted">Comienza agregando algunos documentos para este cliente</p>
+                <button class="btn btn-primary" onclick="showUploadModal()">
+                    <i class="fas fa-upload me-2"></i>Subir Documentos
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para subir documentos -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-upload me-2"></i>Subir Documentos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="documents" class="form-label">Seleccionar Documentos:</label>
+                        <input type="file" class="form-control" id="documents" name="documents" 
+                               multiple accept=".pdf,.txt,.doc,.docx">
+                        <div class="form-text">Formatos soportados: PDF, TXT, DOC, DOCX</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="uploadDocuments()">
+                    <i class="fas fa-upload me-2"></i>Subir Documentos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para vista previa de texto -->
+<div class="modal fade" id="textPreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-eye me-2"></i>Vista Previa de Documento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="textPreviewContent" style="max-height: 400px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de prueba -->
+<div class="modal fade" id="testResultModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-flask me-2"></i>Resultado de Prueba</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="testResultContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            const button = event.target.closest('button');
+            const originalIcon = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check text-success"></i>';
+            setTimeout(() => {
+                button.innerHTML = originalIcon;
+            }, 1000);
+        });
+    }
+    
+    function testClient(publicId) {
+        fetch(`{{ url_for('indexer_admin.test_client_api', client_public_id='PLACEHOLDER') }}`.replace('PLACEHOLDER', publicId))
+            .then(response => response.json())
+            .then(data => {
+                const modal = new bootstrap.Modal(document.getElementById('testResultModal'));
+                const content = document.getElementById('testResultContent');
+                
+                if (data.success) {
+                    content.innerHTML = `
+                        <div class="alert alert-success">
+                            <h6><i class="fas fa-check-circle me-2"></i>Prueba Exitosa</h6>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Pregunta:</strong></label>
+                            <div class="bg-light p-2 rounded">${data.question}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Respuesta:</strong></label>
+                            <div class="bg-light p-2 rounded" style="max-height: 300px; overflow-y: auto;">
+                                ${data.response}
+                            </div>
+                        </div>
+                        <div class="text-muted">
+                            <small>Timestamp: ${data.timestamp}</small>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Error en la Prueba</h6>
+                            <p class="mb-0">${data.error}</p>
+                        </div>
+                    `;
+                }
+                
+                modal.show();
+            })
+            .catch(error => {
+                alert(`❌ Error de conexión: ${error.message}`);
+            });
+    }
+    
+    function reindexClient() {
+        if (!confirm('¿Estás seguro de que quieres re-indexar este cliente? Esto puede tomar varios minutos.')) {
+            return;
+        }
+        
+        fetch(`{{ url_for('indexer_admin.reindex_client', client_id=client.id) }}`, {
+            method: 'POST'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    location.reload();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert(`❌ Error: ${error.message}`);
+            });
+    }
+    
+    function showUploadModal() {
+        const modal = new bootstrap.Modal(document.getElementById('uploadModal'));
+        modal.show();
+    }
+    
+    function uploadDocuments() {
+        const filesInput = document.getElementById('documents');
+        const files = filesInput.files;
+        
+        if (files.length === 0) {
+            alert('Por favor selecciona al menos un archivo');
+            return;
+        }
+        
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('documents', files[i]);
+        }
+        
+        fetch(`{{ url_for('indexer_admin.upload_documents', client_id=client.id) }}`, {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
+                    location.reload();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert(`❌ Error: ${error.message}`);
+            });
+    }
+    
+    function showTextPreview(filename, content) {
+        const modal = new bootstrap.Modal(document.getElementById('textPreviewModal'));
+        const contentDiv = document.getElementById('textPreviewContent');
+        
+        document.querySelector('#textPreviewModal .modal-title').innerHTML = 
+            `<i class="fas fa-eye me-2"></i>Vista Previa: ${filename}`;
+        
+        contentDiv.innerHTML = `<pre class="bg-light p-3 rounded">${content}</pre>`;
+        modal.show();
+    }
+</script>
+{% endblock %}

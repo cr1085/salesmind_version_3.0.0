@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chat Inteligente - SalesMind</title>
+  <script>
+    async function enviarMensaje() {
+      const mensaje = document.getElementById('mensaje').value;
+      const clientId = "AQUI_VA_EL_ID_PUBLICO_DEL_CLIENTE"; // Cambia esto por el ID real
+
+      const respuesta = await fetch("https://TU_DOMINIO_O_IP/chat-api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: mensaje, clientId: clientId })
+      });
+      const data = await respuesta.json();
+      document.getElementById('respuesta').innerText = data.reply || data.error;
+    }
+  </script>
+</head>
+<body>
+  <h2>Chat Inteligente de Ventas</h2>
+  <input type="text" id="mensaje" placeholder="Escribe tu pregunta aquí">
+  <button onclick="enviarMensaje()">Enviar</button>
+  <div id="respuesta"></div>
+</body>
+</html>

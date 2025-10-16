@@ -1,382 +1,157 @@
-# # from flask import Blueprint, request, jsonify, current_app # <-- 1. IMPORTAR current_app
-# # from flask_login import login_required
-# # from .core import AIAssistant
-# # # Quitamos la importación directa de RAGProcessor
-
-# # assistant_bp = Blueprint('assistant', __name__)
-# # ai_assistant = AIAssistant()
-# # # rag_processor = RAGProcessor() # <-- 2. BORRAR ESTA LÍNEA
-
-# # def get_db_connection():
-# #     db_path = Config.DATABASE_PATH
-# #     conn = sqlite3.connect(db_path)
-# #     conn.row_factory = sqlite3.Row
-# #     return conn
-
-# # @assistant_bp.route('/ask', methods=['POST'])
-# # @login_required
-# # def ask():
-# #     data = request.get_json()
-# #     question = data.get('question')
-
-# #     if not question:
-# #         return jsonify({'error': 'No se proporcionó ninguna pregunta.'}), 400
-
-# #     # 3. USAR EL PROCESADOR COMPARTIDO DESDE 'current_app'
-# #     context = current_app.rag_processor.get_relevant_context(question)
-    
-# #     print(f"DEBUG: Contexto encontrado para la pregunta:\n---\n{context}\n---")
-    
-# #     if context:
-# #         prompt = f"Basándote únicamente en el contexto: {context}, responde: {question}"        
-# #     else:
-# #         prompt = question
-
-# #     response_text = ai_assistant.get_response(prompt)
-    
-# #     return jsonify({'response': response_text})
-
-# # ==================================================================
-
-# # from flask import Blueprint, request, jsonify, current_app
-# # from flask_login import login_required, current_user
-# # import sqlite3
-# # from config import Config
-# # from datetime import datetime
-
-# # assistant_bp = Blueprint('assistant', __name__)
-
-# # # Necesitamos acceso a la clase del asistente para crear una instancia
-# # from .core import AIAssistant
-# # ai_assistant = AIAssistant()
-
-# # def get_db_connection():
-# #     conn = sqlite3.connect(Config.DATABASE_PATH)
-# #     conn.row_factory = sqlite3.Row
-# #     return conn
-
-# # @assistant_bp.route('/ask', methods=['POST'])
-# # @login_required
-# # def ask():
-# #     data = request.get_json()
-# #     question = data.get('question')
-
-# #     if not question:
-# #         return jsonify({'error': 'No se proporcionó ninguna pregunta.'}), 400
-
-# #     # --- INICIO DE LA LÓGICA INTELIGENTE ---
-# #     # 1. Buscamos contexto en los documentos, como siempre.
-# #     context = current_app.rag_processor.get_relevant_context(question)
-    
-# #     print(f"DEBUG: Contexto encontrado para la pregunta:\n---\n{context}\n---")
-    
-# #     if context:
-# #         # 2. Si encontramos contexto, creamos el prompt estricto de RAG.
-# #         prompt = f"""
-# #         Basándote únicamente en el siguiente contexto extraído de documentos legales, responde la pregunta del usuario.
-# #         Si la respuesta no está en el contexto, di "La información no se encuentra en los documentos que he procesado."
-
-# #         ---
-# #         Contexto:
-# #         {context}
-# #         ---
-
-# #         Pregunta del usuario: {question}
-# #         """
-# #     else:
-# #         # 3. Si NO hay contexto, es una pregunta general. Creamos un prompt conversacional.
-# #         prompt = f"Eres un asistente amigable y profesional. Responde la siguiente pregunta de forma concisa: {question}"
-    
-# #     # 4. Le pasamos el prompt adecuado al motor de IA.
-# #     response_text = ai_assistant.get_response(prompt)
-# #     # --- FIN DE LA LÓGICA INTELIGENTE ---
-    
-# #     # Guardamos la consulta en el log
-# #     try:
-# #         conn = get_db_connection()
-# #         conn.execute('INSERT INTO query_log (user_id, question) VALUES (?, ?)', (current_user.id, question))
-# #         conn.commit()
-# #         conn.close()
-# #     except Exception as e:
-# #         print(f"Error al registrar la consulta: {e}")
-
-# #     return jsonify({'response': response_text})
-
-# # ==================================================================
-
-# from flask import Blueprint, request, jsonify
-# from twilio.twiml.messaging_response import MessagingResponse
-# from flask_login import login_required, current_user
-# import os
-# import sqlite3
-# from config import Config
-
-# # --- INICIO: NUEVAS IMPORTACIONES PARA EL RAG PERSISTENTE ---
-# from langchain_community.vectorstores import FAISS
-# from langchain_community.embeddings import HuggingFaceEmbeddings
-# from langchain_google_genai import ChatGoogleGenerativeAI
-# from langchain_community.llms import Ollama
-# from langchain.chains import RetrievalQA
-# from langchain.prompts import PromptTemplate
-# # --- FIN: NUEVAS IMPORTACIONES ---
-
-# assistant_bp = Blueprint('assistant', __name__)
-
-# # --- INICIO: CARGA DEL ÍNDICE Y MODELOS (SE EJECUTA UNA SOLA VEZ) ---
-# INDEX_PATH = "faiss_index_maestra"
-# vector_store = None
-
-# try:
-#     # Cargamos el modelo de embeddings que usó el indexador
-#     embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    
-#     if os.path.exists(INDEX_PATH):
-#         # Cargamos la base de conocimiento persistente desde el disco
-#         vector_store = FAISS.load_local(
-#             INDEX_PATH, 
-#             embedding_model, 
-#             allow_dangerous_deserialization=True
-#         )
-#         print(f"-> Base de Conocimiento Maestra ('{INDEX_PATH}') cargada exitosamente.")
-#     else:
-#         print(f"-> ADVERTENCIA: No se encontró la Base de Conocimiento en '{INDEX_PATH}'. El asistente solo responderá de forma general.")
-# except Exception as e:
-#     print(f"-> ERROR CRÍTICO al cargar la Base de Conocimiento: {e}")
-
-# # Plantilla del prompt para instruir a la IA a ser un abogado experto
-# prompt_template = """
-# Eres LexIA, un Asistente Jurídico Junior. Tu tono es profesional pero también amable y didáctico. Tu objetivo es ayudar al usuario a entender el contenido de la Información Jurídica.
-
-# Analiza la pregunta del usuario. Luego, revisa el siguiente contexto que se te ha proporcionado.
-
-# **Usa la información del contexto para construir una respuesta conversacional y clara.** No te limites a copiar y pegar. Explica el concepto legal en tus propias palabras, pero asegúrate de que cada afirmación que hagas esté directamente respaldada por el texto del contexto.
-
-# Si el contexto no contiene la información necesaria para responder, indica amablemente: "He revisado mis Validaciones Jurídicas, pero no he encontrado información específica sobre tu pregunta."
-
-# CONTEXTO:
-# {context}
-
-# PREGUNTA:
-# {question}
-
-# RESPUESTA AMABLE Y PROFESIONAL:
-# """
-
-# PROMPT = PromptTemplate(
-#     template=prompt_template, input_variables=["context", "question"]
-# )
-# # --- FIN: CARGA DEL ÍNDICE Y MODELOS ---
-
-# def get_db_connection():
-#     conn = sqlite3.connect(Config.DATABASE_PATH)
-#     conn.row_factory = sqlite3.Row
-#     return conn
-
-
-
-# # NUEVA FUNCIÓN "CEREBRO"
-# def get_rag_response(question: str) -> dict:
-#     """
-#     Esta es la función central de RAG. Recibe una pregunta y devuelve
-#     un diccionario con la respuesta y las fuentes.
-#     """
-#     if not vector_store:
-#         return {'answer': 'Error: La Base de Conocimiento no está disponible.', 'sources': [], 'media_url': None}
-
-#     try:
-#         if Config.AI_PROVIDER == 'google':
-#             llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest", google_api_key=Config.GOOGLE_API_KEY, temperature=0.1)
-#         else:
-#             llm = Ollama(model="phi3:mini", temperature=0.1)
-#     except Exception as e:
-#         return {'answer': f"Error al inicializar el modelo de IA: {e}", 'sources': [], 'media_url': None}
-
-#     qa_chain = RetrievalQA.from_chain_type(
-#         llm=llm,
-#         chain_type="stuff",
-#         retriever=vector_store.as_retriever(search_kwargs={"k": 4}),
-#         return_source_documents=True,
-#         chain_type_kwargs={"prompt": PROMPT}
-#     )
-
-#     try:
-#         result = qa_chain.invoke({"query": question})
-#     except Exception as e:
-#         print(f"ERROR al ejecutar la cadena RAG: {e}")
-#         return {'answer': "Ocurrió un error al procesar la respuesta.", 'sources': [], 'media_url': None}
-
-#     sources = []
-#     if result.get('source_documents'):
-#         seen_sources = set()
-#         for doc in result['source_documents']:
-#             source_name = doc.metadata.get('source', 'Fuente desconocida')
-#             if source_name not in seen_sources:
-#                 sources.append(source_name)
-#                 seen_sources.add(source_name)
-
-#     # --- Lógica para detectar y adjuntar documentos ---
-#     ai_text = result.get('result', 'No se pudo generar una respuesta.')
-#     media_url = None
-
-#     # (Aquí pondremos la lógica para catálogos en el futuro)
-#     # Ejemplo: if "[DOCUMENT:" in ai_text: ...
-
-#     return {
-#         'answer': ai_text,
-#         'sources': sources,
-#         'media_url': media_url
-#     }
-
-
-# @assistant_bp.route('/ask', methods=['POST'])
-# @login_required
-# @assistant_bp.route('/ask', methods=['POST'])
-# @login_required
-# def ask():
-#     data = request.get_json()
-#     question = data.get('question')
-
-#     if not question:
-#         return jsonify({'error': 'No se proporcionó ninguna pregunta.'}), 400
-
-#     # Llamamos a nuestro nuevo cerebro centralizado
-#     response_dict = get_rag_response(question)
-
-#     # Guardamos el log (esta lógica no cambia)
-#     try:
-#         conn = get_db_connection()
-#         conn.execute('INSERT INTO query_log (user_id, question) VALUES (?, ?)', (current_user.id, question))
-#         conn.commit()
-#         conn.close()
-#     except Exception as e:
-#         print(f"Error al registrar la consulta en el log: {e}")
-
-#     # Devolvemos la respuesta
-#     return jsonify({
-#         'answer': response_dict['answer'],
-#         'sources': response_dict['sources']
-#     })
-# # def ask():
-# #     data = request.get_json()
-# #     question = data.get('question')
-
-# #     if not question:
-# #         return jsonify({'error': 'No se proporcionó ninguna pregunta.'}), 400
-
-# #     # Si el índice no se cargó, devolvemos un error claro
-# #     if not vector_store:
-# #         return jsonify({'answer': 'Error: La Base de Conocimiento Maestra no está disponible. Por favor, ejecute el indexador y reinicie el servidor.', 'sources': []}), 500
-
-# #     # 1. Seleccionar el modelo de IA (Ollama o Google) desde config.py
-# #     try:
-# #         if Config.AI_PROVIDER == 'google':
-# #             llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest", google_api_key=Config.GOOGLE_API_KEY, temperature=0.1)
-# #         else:
-# #             llm = Ollama(model="phi3:mini", temperature=0.1)
-# #     except Exception as e:
-# #         return jsonify({'answer': f"Error al inicializar el modelo de IA: {e}", 'sources': []}), 500
-
-# #     # 2. Configurar y ejecutar la cadena de RAG con la biblioteca persistente
-# #     qa_chain = RetrievalQA.from_chain_type(
-# #         llm=llm,
-# #         chain_type="stuff",
-# #         retriever=vector_store.as_retriever(search_kwargs={"k": 4}), # Busca 4 fragmentos relevantes
-# #         return_source_documents=True,
-# #         chain_type_kwargs={"prompt": PROMPT}
-# #     )
-
-# #     try:
-# #         result = qa_chain.invoke({"query": question})
-# #     except Exception as e:
-# #         print(f"ERROR al ejecutar la cadena RAG: {e}")
-# #         return jsonify({'answer': "Ocurrió un error al procesar la respuesta de la IA.", 'sources': []}), 500
-
-# #     # 3. Formatear las fuentes para enviarlas al frontend
-# #     sources = []
-# #     if result.get('source_documents'):
-# #         seen_sources = set()
-# #         for doc in result['source_documents']:
-# #             source_name = doc.metadata.get('source', 'Fuente desconocida')
-# #             if source_name not in seen_sources:
-# #                 sources.append(source_name)
-# #                 seen_sources.add(source_name)
-    
-# #     # Guardamos la consulta en el log
-# #     try:
-# #         conn = get_db_connection()
-# #         conn.execute('INSERT INTO query_log (user_id, question) VALUES (?, ?)', (current_user.id, question))
-# #         conn.commit()
-# #         conn.close()
-# #     except Exception as e:
-# #         print(f"Error al registrar la consulta en el log: {e}")
-
-# #     # 4. Devolvemos una respuesta JSON estructurada
-# #     return jsonify({
-# #         'answer': result.get('result', 'No se pudo generar una respuesta.'),
-# #         'sources': sources
-# #     })
-
-# # --- INICIO: NUEVA RUTA PARA WHATSAPP CON TWILIO ---
-
-# @assistant_bp.route("/whatsapp_webhook", methods=['POST'])
-# def whatsapp_webhook():
-#     """
-#     Este webhook recibe los mensajes que nos reenvía Twilio desde WhatsApp.
-#     """
-#     # 1. Obtenemos el mensaje del usuario del formato de Twilio
-#     incoming_msg = request.values.get('Body', '').lower()
-#     print(f"Mensaje recibido de WhatsApp: {incoming_msg}")
-
-#     # 2. Llamamos a nuestro mismo "cerebro" de IA
-#     response_dict = get_rag_response(incoming_msg)
-
-#     # 3. Creamos la respuesta en el formato XML que Twilio espera (TwiML)
-#     resp = MessagingResponse()
-#     message = resp.message()
-    
-#     # Añadimos el texto de la respuesta
-#     message.body(response_dict['answer'])
-    
-#     # Si la IA nos dio una URL de un documento, la adjuntamos
-#     if response_dict.get('media_url'):
-#         message.media(response_dict['media_url'])
-
-#     # 4. Devolvemos la respuesta a Twilio
-#     return str(resp)
-
-# --- FIN: NUEVA RUTA PARA WHATSAPP ---
-
-# /modules/assistant/routes.py
-
-from flask import Blueprint, request
-from twilio.twiml.messaging_response import MessagingResponse
+# modules/assistant/routes.py
+from flask import Blueprint, request, jsonify
+import requests
 import os
+import time
 
-# ¡Importante! Importamos el "cerebro" desde core.py
-# Asegúrate de que tu archivo core.py tiene una función
-# llamada get_commercial_response que devuelve un string.
+# --- Nuevas importaciones ---
+# Importamos el "cerebro" de la IA desde core.py
 from .core import get_commercial_response
+# Importamos los modelos de la base de datos
+from ..models import Client, Conversation, QueryLog
+from .. import db
+# Importamos la configuración para las claves API
+from config import Config
 
 assistant_bp = Blueprint('assistant', __name__)
 
-@assistant_bp.route("/whatsapp_webhook", methods=['POST'])
-def whatsapp_webhook():
+# --- FUNCIÓN DE UTILIDAD PARA NOTIFICACIONES DE TELEGRAM ---
+def send_telegram_notification(message, client_chat_id):
     """
-    Este webhook recibe los mensajes que nos reenvía Twilio desde WhatsApp.
+    Envía un mensaje a un chat específico de Telegram.
     """
-    # 1. Obtenemos el mensaje del usuario del formato de Twilio
-    incoming_msg = request.values.get('Body', '')
-    print(f"Mensaje recibido de WhatsApp: '{incoming_msg}'")
+    token = Config.TELEGRAM_TOKEN
+    
+    if not token or not client_chat_id:
+        print("ADVERTENCIA: Faltan variables de Telegram para enviar la notificación.")
+        return
 
-    # 2. Llamamos a nuestro "cerebro" de IA
-    # Esta función debe existir en tu archivo core.py
-    ai_response = get_commercial_response(incoming_msg)
-    print(f"Respuesta generada por la IA: '{ai_response}'")
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {"chat_id": client_chat_id, "text": message}
+    
+    try:
+        requests.post(url, json=payload)
+    except Exception as e:
+        print(f"Error al enviar notificación a Telegram: {e}")
 
-    # 3. Creamos la respuesta en el formato XML que Twilio espera (TwiML)
-    resp = MessagingResponse()
-    message = resp.message()
-    message.body(ai_response)
+# --- EL NUEVO ENDPOINT PRINCIPAL PARA EL CHAT WEB ---
+@assistant_bp.route("/chat-api", methods=['POST'])
+def chat_api():
+    """
+    Recibe los mensajes desde el widget de chat web.
+    """
+    data = request.get_json()
+    user_message = data.get('message')
+    client_public_id = data.get('clientId') # El widget enviará el ID público del cliente
 
-    # 4. Devolvemos la respuesta a Twilio
-    return str(resp)
+    if not all([user_message, client_public_id]):
+        return jsonify({"error": "Faltan datos en la petición (message o clientId)"}), 400
+
+    # 1. Buscamos al cliente en la base de datos usando su ID público
+    client = Client.query.filter_by(public_id=client_public_id).first()
+
+    if not client:
+        return jsonify({"error": "Cliente no válido o no encontrado."}), 403
+
+    # --- NUEVA LÓGICA CON POSTGRESQL ---
+    start_time = time.time()
+    
+    try:
+        # 1. Registrar mensaje del usuario en PostgreSQL
+        user_conversation = Conversation(
+            client_id=client.id,
+            chat_id=f"web_{client.public_id}",  # ID único para chat web
+            sender='user',
+            message_text=user_message,
+            platform='web',
+            message_type='text'
+        )
+        db.session.add(user_conversation)
+        db.session.flush()  # Para obtener el ID sin hacer commit
+        
+        # 2. Obtener respuesta de la IA (ahora desde PostgreSQL)
+        ai_response = get_commercial_response(user_message, client.public_id)  # Pasamos public_id como espera la función
+        
+        # 3. Registrar respuesta del bot en PostgreSQL
+        bot_conversation = Conversation(
+            client_id=client.id,
+            chat_id=f"web_{client.public_id}",
+            sender='assistant',
+            message_text=ai_response,
+            platform='web',
+            message_type='text'
+        )
+        db.session.add(bot_conversation)
+        
+        # 4. Calcular tiempo de respuesta
+        response_time = time.time() - start_time
+        
+        # 5. Registrar la consulta completa en QueryLog
+        query_log = QueryLog(
+            client_id=client.id,
+            conversation_id=user_conversation.id,
+            question=user_message,
+            answer=ai_response,
+            response_time=response_time,
+            model_used='gemini-1.5-flash-latest',  # Ajustar según configuración
+            retrieved_chunks=3  # Ajustar según lo que devuelva RAG
+        )
+        db.session.add(query_log)
+        
+        # 6. Commit todas las operaciones
+        db.session.commit()
+        
+        print(f"✅ Conversación guardada en PostgreSQL - Cliente: {client.name}")
+        
+    except Exception as e:
+        print(f"❌ Error al guardar conversación: {e}")
+        db.session.rollback()
+        # Aún devolvemos la respuesta aunque falle el logging
+        ai_response = "Lo siento, ocurrió un error procesando tu consulta."
+    
+    # 7. Enviar notificación a Telegram (opcional)
+    if client.telegram_chat_id:
+        notification_message = (
+            f"🤖 Nuevo lead de '{client.name}'\n"
+            f"----------------------------------\n"
+            f"**Pregunta:** {user_message}\n"
+            f"**Respuesta:** {ai_response}"
+        )
+        send_telegram_notification(notification_message, client.telegram_chat_id)
+
+    # 8. Devolver respuesta al widget de chat
+    return jsonify({
+        "reply": ai_response,
+        "timestamp": user_conversation.timestamp.isoformat() if 'user_conversation' in locals() else None,
+        "client_name": client.name
+    })
+
+# --- RUTA PARA DESCARGAR COTIZACIONES PDF ---
+@assistant_bp.route("/download-quote/<filename>", methods=['GET'])
+def download_quote(filename):
+    """
+    Permite descargar cotizaciones PDF generadas
+    """
+    try:
+        from flask import send_file
+        import os
+        
+        # Directorio de cotizaciones
+        quotes_dir = "instance/quotes"
+        file_path = os.path.join(quotes_dir, filename)
+        
+        # Verificar que el archivo existe y es un PDF
+        if not os.path.exists(file_path) or not filename.endswith('.pdf'):
+            return jsonify({"error": "Archivo no encontrado"}), 404
+        
+        # Enviar archivo
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        print(f"❌ Error descargando cotización: {e}")
+        return jsonify({"error": "Error al descargar archivo"}), 500

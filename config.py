@@ -1,31 +1,38 @@
+# config.py
 import os
 from dotenv import load_dotenv
+from sqlalchemy.engine import URL
+from urllib.parse import quote_plus
 
 
-# --- LA LÍNEA QUE FALTA ---
-# Esta función es la que lee tu archivo .env y carga las claves.
+
 load_dotenv()
 
-# La raíz del proyecto es el directorio donde se encuentra este archivo.
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
     
-    # La base de datos estará en la carpeta 'instance' DENTRO de la raíz del proyecto.
-    # Esta es la ruta correcta y robusta.
-    DATABASE_PATH = os.path.join(BASE_DIR, 'instance', 'legal_db.db')
+    # --- Construcción Segura de la URL de la Base de Datos ---
+    db_user = os.environ.get('DB_USER')
+    # db_password = os.environ.get('DB_PASSWORD')
+    db_password = quote_plus(os.environ.get('DB_PASSWORD'))
+    db_host = os.environ.get('DB_HOST')
+    db_port = os.environ.get('DB_PORT')
+    db_name = os.environ.get('DB_NAME')
+
+    SQLALCHEMY_DATABASE_URI = URL.create(
+        drivername="postgresql+psycopg2",
+        username=db_user,
+        password=db_password,
+        host=db_host,
+        port=db_port,
+        database=db_name,
+    )
     
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
     # Claves API
     GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
-
     TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
-    
-    # El interruptor principal para la IA
-    AI_PROVIDER = os.environ.get('AI_PROVIDER', 'ollama')
-
-# Verificación que se imprime en la terminal al iniciar
-print("-" * 30)
-print(f"-> RUTA DE LA BASE DE DATOS: '{Config.DATABASE_PATH}'")
-print(f"-> MODO DE IA CONFIGURADO: '{Config.AI_PROVIDER}'")
-print("-" * 30)
+    AI_PROVIDER = os.environ.get('AI_PROVIDER', 'google')

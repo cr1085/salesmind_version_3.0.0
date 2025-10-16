@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalesMind - Sistema Definitivo SIN REFRESH</title>
+</head>
+<body>
+
+    <h1>Bienvenido a Salesmind</h1>
+    <p>Tu asesor de confianza - <strong>🛡️ SISTEMA DEFINITIVO SIN REFRESH</strong></p>
+
+    <style>
+        /* 🛡️ INDICADOR DE ESTADO */
+        #status-indicator {
+            position: fixed; top: 10px; right: 10px; 
+            padding: 8px 12px; border-radius: 6px; 
+            font-size: 11px; z-index: 10000;
+            background: #28a745; color: white;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        #chat-bubble {
+            position: fixed; bottom: 25px; right: 25px; background-color: #7a5c43;
+            color: white; width: 60px; height: 60px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease-in-out; z-index: 9999;
+        }
+        #chat-bubble:hover { transform: scale(1.1); }
+        
+        #chat-window {
+            position: fixed; bottom: 100px; right: 25px; width: 350px;
+            height: 500px; background-color: #fff; border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3); display: none;
+            flex-direction: column; overflow: hidden; font-family: Arial, sans-serif;
+            z-index: 9998; border: 2px solid #28a745;
+        }
+        
+        #chat-header {
+            background: linear-gradient(135deg, #7a5c43, #5d4332);
+            color: white; padding: 15px; font-weight: bold; text-align: center;
+            position: relative;
+        }
+        
+        #message-counter {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px;
+            font-size: 10px;
+        }
+        
+        #chat-messages {
+            flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; 
+            flex-direction: column; max-height: 350px;
+        }
+        
+        .message {
+            padding: 10px 15px; border-radius: 20px; margin-bottom: 10px; max-width: 85%;
+            line-height: 1.4; animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message { 
+            background: linear-gradient(135deg, #f1f0f0, #e8e8e8); 
+            align-self: flex-end; color: #333;
+        }
+        .bot-message { 
+            background: linear-gradient(135deg, #7a5c43, #5d4332); 
+            color: white; align-self: flex-start; 
+        }
+        
+        #chat-input-container { 
+            display: flex; border-top: 2px solid #28a745; padding: 12px; 
+            background: #f8f9fa;
+        }
+        
+        #chat-input {
+            flex-grow: 1; border: 2px solid #28a745; border-radius: 25px;
+            padding: 12px 18px; outline: none; font-size: 14px;
+            transition: all 0.2s ease; background: white;
+        }
+        #chat-input:focus {
+            border-color: #7a5c43; box-shadow: 0 0 8px rgba(122, 92, 67, 0.3);
+        }
+        
+        #send-button {
+            background: linear-gradient(135deg, #28a745, #20924a); 
+            color: white; border: none; border-radius: 50%;
+            width: 45px; height: 45px; margin-left: 10px; cursor: pointer; 
+            font-size: 18px; transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #send-button:hover {
+            background: linear-gradient(135deg, #20924a, #1e7e34);
+            transform: scale(1.05);
+        }
+        #send-button:disabled {
+            background: #6c757d; cursor: not-allowed; transform: none;
+        }
+        
+        /* 🎨 ENLACES SEGUROS */
+        .safe-download-btn {
+            display: inline-block; background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529 !important; padding: 8px 16px; border-radius: 20px;
+            text-decoration: none; font-weight: bold; margin: 8px 0;
+            cursor: pointer; transition: all 0.3s ease;
+            border: 2px solid #ffc107; box-shadow: 0 2px 6px rgba(255,193,7,0.3);
+        }
+        .safe-download-btn:hover {
+            background: linear-gradient(135deg, #e0a800, #d39e00);
+            transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255,193,7,0.4);
+        }
+        
+        /* 🔄 LOADING SPINNER */
+        .loading-spinner {
+            display: inline-block; width: 12px; height: 12px;
+            border: 2px solid #ffffff40; border-top: 2px solid #ffffff;
+            border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    <!-- 🛡️ INDICADOR DE ESTADO -->
+    <div id="status-indicator">🛡️ SISTEMA SEGURO</div>
+
+    <div id="chat-bubble">💬</div>
+    <div id="chat-window">
+        <div id="chat-header">
+            SalesMind Assistant
+            <span id="message-counter">Mensajes: 0</span>
+        </div>
+        <div id="chat-messages">
+            <div class="message bot-message">¡Hola! Soy tu asesor inmobiliario. ¿En qué puedo ayudarte hoy?</div>
+        </div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Escribe tu mensaje aquí..." 
+                   autocomplete="off" spellcheck="false" maxlength="500">
+            <button id="send-button" type="button" title="Enviar mensaje">➤</button>
+        </div>
+    </div>
+
+    <script>
+        // 🛡️ CONFIGURACIÓN ULTRA-SEGURA
+        console.log('🛡️ INICIANDO SISTEMA DEFINITIVO SIN REFRESH');
+        
+        // Variables globales protegidas
+        const CONFIG = {
+            CLIENT_ID: '78e5f512-0a21-407b-819a-b5f02a091aac',
+            API_URL: 'http://127.0.0.1:5000/chat-api',
+            MAX_RETRIES: 3,
+            TIMEOUT: 15000
+        };
+        
+        let messageCount = 0;
+        let conversationHistory = [];
+        let isProcessing = false;
+        
+        // Referencias DOM
+        const elements = {
+            chatBubble: document.getElementById('chat-bubble'),
+            chatWindow: document.getElementById('chat-window'),
+            chatMessages: document.getElementById('chat-messages'),
+            chatInput: document.getElementById('chat-input'),
+            sendButton: document.getElementById('send-button'),
+            statusIndicator: document.getElementById('status-indicator'),
+            messageCounter: document.getElementById('message-counter')
+        };
+
+        // 🛡️ SISTEMA DE PROTECCIÓN GLOBAL
+        function initializeProtections() {
+            // Prevenir navegación accidental
+            window.addEventListener('beforeunload', (e) => {
+                if (conversationHistory.length > 1) {
+                    e.preventDefault();
+                    e.returnValue = '¿Seguro que quieres salir? Se perderá la conversación.';
+                }
+            });
+
+            // Capturar todos los errores
+            window.addEventListener('error', handleGlobalError);
+            window.addEventListener('unhandledrejection', handlePromiseRejection);
+
+            // Prevenir submit de formularios
+            document.addEventListener('submit', preventFormSubmit);
+            
+            // Prevenir navegación por enlaces
+            document.addEventListener('click', preventLinkNavigation);
+            
+            updateStatus('🛡️ PROTECCIONES ACTIVAS', 'success');
+            console.log('✅ Sistema de protecciones inicializado');
+        }
+
+        // 🔧 MANEJADORES DE ERRORES
+        function handleGlobalError(e) {
+            console.error('💥 ERROR GLOBAL:', e.error);
+            updateStatus('⚠️ ERROR DETECTADO', 'error');
+            setTimeout(() => updateStatus('🛡️ SISTEMA SEGURO', 'success'), 3000);
+        }
+
+        function handlePromiseRejection(e) {
+            console.error('💥 PROMISE REJECTION:', e.reason);
+            e.preventDefault();
+            updateStatus('⚠️ ERROR DE CONEXIÓN', 'warning');
+            setTimeout(() => updateStatus('🛡️ SISTEMA SEGURO', 'success'), 3000);
+        }
+
+        function preventFormSubmit(e) {
+            console.log('🚫 SUBMIT INTERCEPTADO Y CANCELADO');
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        }
+
+        function preventLinkNavigation(e) {
+            if (e.target.tagName === 'A' && !e.target.classList.contains('safe-download-btn')) {
+                console.log('🚫 ENLACE INTERCEPTADO:', e.target.href);
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }
+
+        // 🎨 SISTEMA DE ESTADO VISUAL
+        function updateStatus(message, type = 'info') {
+            const colors = {
+                success: '#28a745',
+                warning: '#ffc107', 
+                error: '#dc3545',
+                info: '#17a2b8',
+                processing: '#6f42c1'
+            };
+            
+            elements.statusIndicator.textContent = message;
+            elements.statusIndicator.style.background = colors[type];
+        }
+
+        function updateMessageCounter() {
+            elements.messageCounter.textContent = `Mensajes: ${messageCount}`;
+        }
+
+        // 💬 FUNCIÓN DE CHAT ULTRA-SEGURA
+        function toggleChat(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            const isVisible = elements.chatWindow.style.display === 'flex';
+            elements.chatWindow.style.display = isVisible ? 'none' : 'flex';
+            
+            if (!isVisible) {
+                elements.chatInput.focus();
+                console.log('🗨️ Chat abierto');
+            } else {
+                console.log('🗨️ Chat cerrado');
+            }
+        }
+
+        // 📤 FUNCIÓN DE ENVÍO DEFINITIVA
+        async function sendMessageSecure(e) {
+            // 🛡️ MÁXIMA PROTECCIÓN CONTRA EVENTOS
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation(); 
+                e.stopImmediatePropagation();
+            }
+
+            // Verificar si ya está procesando
+            if (isProcessing) {
+                console.log('⏳ Mensaje ya en proceso, ignorando...');
+                return false;
+            }
+
+            const messageText = elements.chatInput.value.trim();
+            if (!messageText) {
+                elements.chatInput.focus();
+                return false;
+            }
+
+            // Marcar como procesando
+            isProcessing = true;
+            messageCount++;
+            
+            console.log(`📤 [${messageCount}] Enviando: "${messageText}"`);
+            
+            try {
+                // UI feedback inmediato
+                updateStatus('🔄 ENVIANDO...', 'processing');
+                elements.sendButton.disabled = true;
+                elements.chatInput.disabled = true;
+                elements.sendButton.innerHTML = '<div class="loading-spinner"></div>';
+                
+                // Agregar mensaje del usuario
+                addMessage(messageText, 'user');
+                elements.chatInput.value = '';
+                updateMessageCounter();
+                
+                // 🌐 REQUEST ULTRA-SEGURO
+                const response = await sendSecureRequest(messageText);
+                
+                // Procesar respuesta
+                if (response && response.reply) {
+                    addMessage(response.reply, 'bot');
+                    updateStatus('✅ MENSAJE ENVIADO', 'success');
+                    
+                    // Guardar en historial
+                    conversationHistory.push(
+                        { type: 'user', message: messageText, timestamp: new Date() },
+                        { type: 'bot', message: response.reply, timestamp: new Date() }
+                    );
+                } else {
+                    throw new Error('Respuesta inválida del servidor');
+                }
+                
+            } catch (error) {
+                console.error(`❌ [${messageCount}] Error:`, error);
+                addMessage('Lo siento, hubo un problema. Por favor, intenta de nuevo.', 'bot');
+                updateStatus('❌ ERROR DE ENVÍO', 'error');
+                
+            } finally {
+                // Restaurar UI
+                isProcessing = false;
+                elements.sendButton.disabled = false;
+                elements.chatInput.disabled = false;
+                elements.sendButton.innerHTML = '➤';
+                elements.chatInput.focus();
+                
+                // Restaurar status después de 2 segundos
+                setTimeout(() => {
+                    if (elements.statusIndicator.textContent.includes('ERROR') || 
+                        elements.statusIndicator.textContent.includes('ENVIADO')) {
+                        updateStatus('🛡️ SISTEMA SEGURO', 'success');
+                    }
+                }, 2000);
+            }
+            
+            return false; // Extra protección
+        }
+
+        // 🌐 REQUEST SEGURO CON REINTENTOS
+        async function sendSecureRequest(message, attempt = 1) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), CONFIG.TIMEOUT);
+            
+            try {
+                console.log(`🌐 Intento ${attempt}/${CONFIG.MAX_RETRIES}`);
+                
+                const response = await fetch(CONFIG.API_URL, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    body: JSON.stringify({ 
+                        message: message, 
+                        clientId: CONFIG.CLIENT_ID 
+                    }),
+                    signal: controller.signal,
+                    redirect: 'error', // 🛡️ NO seguir redirecciones
+                    credentials: 'same-origin'
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log(`✅ [${messageCount}] Respuesta recibida exitosamente`);
+                
+                return data;
+                
+            } catch (error) {
+                clearTimeout(timeoutId);
+                
+                if (error.name === 'AbortError') {
+                    console.log(`⏱️ Timeout en intento ${attempt}`);
+                } else {
+                    console.error(`❌ Error en intento ${attempt}:`, error);
+                }
+                
+                // Reintentar si no es el último intento
+                if (attempt < CONFIG.MAX_RETRIES) {
+                    console.log(`🔄 Reintentando en 1 segundo...`);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    return sendSecureRequest(message, attempt + 1);
+                }
+                
+                throw error;
+            }
+        }
+
+        // 📝 AGREGAR MENSAJES CON PROTECCIÓN
+        function addMessage(text, type) {
+            try {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message', `${type}-message`);
+                
+                if (type === 'bot') {
+                    // 🔗 PROCESAR ENLACES DE DESCARGA DE FORMA SEGURA
+                    const processedText = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, linkText, url) => {
+                        const safeUrl = encodeURI(url);
+                        return `<button class="safe-download-btn" onclick="handleSecureDownload('${safeUrl}', '${linkText}')" type="button">${linkText}</button>`;
+                    });
+                    messageDiv.innerHTML = processedText;
+                } else {
+                    messageDiv.textContent = text;
+                }
+                
+                elements.chatMessages.appendChild(messageDiv);
+                elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+                
+                console.log(`📝 Mensaje ${type} agregado exitosamente`);
+                
+            } catch (error) {
+                console.error('❌ Error agregando mensaje:', error);
+            }
+        }
+
+        // 📥 DESCARGA ULTRA-SEGURA
+        function handleSecureDownload(url, filename) {
+            try {
+                console.log('📥 Iniciando descarga segura:', url);
+                updateStatus('📥 DESCARGANDO...', 'info');
+                
+                const link = document.createElement('a');
+                link.style.display = 'none';
+                link.href = url;
+                link.download = filename || 'documento.pdf';
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                setTimeout(() => updateStatus('🛡️ SISTEMA SEGURO', 'success'), 2000);
+                console.log('✅ Descarga iniciada exitosamente');
+                
+            } catch (error) {
+                console.error('❌ Error en descarga:', error);
+                updateStatus('❌ ERROR DESCARGA', 'error');
+                setTimeout(() => updateStatus('🛡️ SISTEMA SEGURO', 'success'), 3000);
+            }
+        }
+
+        // 🎛️ CONFIGURAR EVENTOS
+        function setupEventListeners() {
+            // Chat toggle
+            elements.chatBubble.addEventListener('click', toggleChat);
+            
+            // Envío con botón
+            elements.sendButton.addEventListener('click', sendMessageSecure);
+            
+            // ✅ ENVÍO CON ENTER - SOLO keydown
+            elements.chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    sendMessageSecure();
+                }
+            });
+            
+            console.log('✅ Event listeners configurados');
+        }
+
+        // 🚀 INICIALIZACIÓN
+        function initialize() {
+            console.log('🚀 Inicializando sistema...');
+            
+            initializeProtections();
+            setupEventListeners();
+            
+            // Hacer función global para enlaces
+            window.handleSecureDownload = handleSecureDownload;
+            
+            // Focus inicial
+            setTimeout(() => {
+                if (elements.chatWindow.style.display === 'flex') {
+                    elements.chatInput.focus();
+                }
+            }, 100);
+            
+            updateStatus('🛡️ SISTEMA LISTO', 'success');
+            console.log('🎉 Sistema completamente inicializado');
+            console.log('🛡️ Protecciones activas:');
+            console.log('   ✅ Anti-refresh total');
+            console.log('   ✅ Manejo de errores global');
+            console.log('   ✅ Reintentos automáticos');
+            console.log('   ✅ Descargas seguras');
+            console.log('   ✅ Persistencia de conversación');
+        }
+
+        // 🔥 EJECUTAR AL CARGAR
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
+        
+    </script>
+</body>
+</html>

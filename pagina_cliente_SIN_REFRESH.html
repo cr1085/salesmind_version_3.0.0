@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página de clientes - SIN REFRESH</title>
+</head>
+<body>
+
+    <h1>Bienvenido a Salesmind</h1>
+    <p>Tu asesor de confianza - <strong>Versión corregida SIN refresh</strong></p>
+
+    <style>
+        #chat-bubble {
+            position: fixed; bottom: 25px; right: 25px; background-color: #7a5c43;
+            color: white; width: 60px; height: 60px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease-in-out;
+        }
+        #chat-bubble:hover { transform: scale(1.1); }
+        #chat-window {
+            position: fixed; bottom: 100px; right: 25px; width: 350px;
+            height: 500px; background-color: #fff; border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3); display: none;
+            flex-direction: column; overflow: hidden; font-family: Arial, sans-serif;
+        }
+        #chat-header {
+            background-color: #7a5c43; color: white; padding: 15px;
+            font-weight: bold; text-align: center;
+        }
+        #chat-messages {
+            flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column;
+        }
+        .message {
+            padding: 10px 15px; border-radius: 20px; margin-bottom: 10px; max-width: 85%;
+            line-height: 1.4;
+        }
+        .user-message { background-color: #f1f0f0; align-self: flex-end; }
+        .bot-message { background-color: #7a5c43; color: white; align-self: flex-start; }
+        #chat-input-container { display: flex; border-top: 1px solid #eee; padding: 10px; }
+        #chat-input {
+            flex-grow: 1; border: 1px solid #ddd; border-radius: 20px;
+            padding: 10px 15px; outline: none; font-size: 14px;
+        }
+        #send-button {
+            background: #7a5c43; color: white; border: none; border-radius: 50%;
+            width: 40px; height: 40px; margin-left: 10px; cursor: pointer; font-size: 18px;
+        }
+        
+        /* Estilo para enlaces de descarga mejorado */
+        .download-link {
+            color: #FFD700 !important; 
+            text-decoration: underline !important;
+            display: inline-block;
+            padding: 5px 10px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+    </style>
+
+    <div id="chat-bubble">💬</div>
+    <div id="chat-window">
+        <div id="chat-header">SalesMind Assistant</div>
+        <div id="chat-messages">
+            <div class="message bot-message">¡Hola! Soy tu asesor inmobiliario. ¿En qué puedo ayudarte hoy?</div>
+        </div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Escribe tu mensaje..." autocomplete="off">
+            <button id="send-button">➤</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuración del cliente
+        const CLIENT_PUBLIC_ID = 'demo-client-12345';
+        const API_HOST = 'http://127.0.0.1:5000';
+
+        // Referencias a elementos
+        const chatBubble = document.getElementById('chat-bubble');
+        const chatWindow = document.getElementById('chat-window');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+
+        // Alternar ventana de chat
+        chatBubble.addEventListener('click', () => {
+            const isVisible = chatWindow.style.display === 'flex';
+            chatWindow.style.display = isVisible ? 'none' : 'flex';
+            if (!isVisible) chatInput.focus();
+        });
+
+        // 🔧 FUNCIÓN DE ENVÍO CORREGIDA
+        const sendMessage = async (event) => {
+            // ✅ PREVENIR COMPORTAMIENTO POR DEFECTO
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            const messageText = chatInput.value.trim();
+            if (messageText === '') return;
+            
+            console.log('📤 Enviando mensaje:', messageText);
+            
+            appendMessage(messageText, 'user-message');
+            chatInput.value = '';
+            chatInput.disabled = true;
+            sendButton.disabled = true;
+
+            try {
+                console.log('🔄 Llamando API...');
+                const response = await fetch(`${API_HOST}/chat-api`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: messageText, clientId: CLIENT_PUBLIC_ID })
+                });
+                
+                console.log('📡 Respuesta recibida:', response.status);
+                
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                const data = await response.json();
+                
+                console.log('✅ Procesando respuesta...');
+                appendMessage(data.reply, 'bot-message');
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                appendMessage('Lo siento, hubo un problema de conexión.', 'bot-message');
+            } finally {
+                chatInput.disabled = false;
+                sendButton.disabled = false;
+                chatInput.focus();
+                console.log('🏁 Mensaje procesado completamente');
+            }
+        };
+
+        // ✅ EVENTOS CORREGIDOS CON PREVENTDEFAULT
+        sendButton.addEventListener('click', (e) => {
+            console.log('🖱️ Click en botón enviar');
+            sendMessage(e);
+        });
+        
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                console.log('⌨️ Enter presionado');
+                e.preventDefault(); // ✅ PREVENIR REFRESH
+                sendMessage(e);
+            }
+        });
+
+        // ✅ PREVENIR SUBMIT DE FORMULARIO
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // ✅ DOBLE SEGURIDAD
+            }
+        });
+
+        // ✅ FUNCIÓN MEJORADA PARA MENSAJES
+        function appendMessage(text, className) {
+            console.log('📝 Agregando mensaje:', className);
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', className);
+            
+            // ✅ MEJORAR ENLACES PARA EVITAR NAVEGACIÓN
+            if (className === 'bot-message') {
+                // Convertir enlaces de markdown a HTML con mejor manejo
+                const htmlText = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+                    return `<a href="${url}" class="download-link" target="_blank" download onclick="handleDownloadClick(event, '${url}')">${text}</a>`;
+                });
+                msgDiv.innerHTML = htmlText;
+            } else {
+                msgDiv.textContent = text;
+            }
+            
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            console.log('✅ Mensaje agregado exitosamente');
+        }
+
+        // ✅ MANEJO SEGURO DE DESCARGAS
+        function handleDownloadClick(event, url) {
+            console.log('📥 Iniciando descarga:', url);
+            event.preventDefault();
+            event.stopPropagation();
+            
+            try {
+                // Crear enlace temporal para descarga
+                const tempLink = document.createElement('a');
+                tempLink.href = url;
+                tempLink.download = '';
+                tempLink.target = '_blank';
+                
+                // Agregar al DOM temporalmente y hacer click
+                document.body.appendChild(tempLink);
+                tempLink.click();
+                document.body.removeChild(tempLink);
+                
+                console.log('✅ Descarga iniciada exitosamente');
+            } catch (error) {
+                console.error('❌ Error en descarga:', error);
+                // Fallback: abrir en nueva ventana
+                window.open(url, '_blank');
+            }
+        }
+
+        // ✅ LOGGING PARA DEBUG
+        console.log('🚀 Cliente SalesMind cargado - Versión SIN REFRESH');
+        console.log('🔧 Correcciones aplicadas:');
+        console.log('   ✅ preventDefault en eventos Enter');
+        console.log('   ✅ Manejo seguro de enlaces de descarga');
+        console.log('   ✅ Logging detallado para debug');
+        
+        // ✅ PREVENIR REFRESH DE PÁGINA GENERAL
+        window.addEventListener('beforeunload', (e) => {
+            console.log('⚠️ Página intentando recargar - investigar causa');
+        });
+        
+    </script>
+</body>
+</html>

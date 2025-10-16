@@ -1,0 +1,297 @@
+<!-- modules/templates/indexer_admin/add_client.html -->
+{% extends "indexer_admin/base.html" %}
+
+{% block title %}Agregar Cliente - SalesMind Indexador Admin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-plus-circle me-2 text-primary"></i>Agregar Nuevo Cliente</h4>
+            </div>
+            
+            <form method="POST" enctype="multipart/form-data" id="addClientForm">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <label for="name" class="form-label">
+                            <i class="fas fa-building me-2"></i><strong>Nombre del Cliente</strong>
+                        </label>
+                        <input type="text" class="form-control form-control-lg" id="name" name="name" 
+                               placeholder="Ej: Empresa ABC Corp" required>
+                        <div class="form-text">
+                            Este será el nombre identificativo del cliente en el sistema
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="telegram_id" class="form-label">
+                            <i class="fab fa-telegram me-2"></i><strong>ID de Telegram</strong> <span class="text-muted">(Opcional)</span>
+                        </label>
+                        <input type="text" class="form-control" id="telegram_id" name="telegram_id" 
+                               placeholder="Ej: @empresa_bot o ID numérico">
+                        <div class="form-text">
+                            ID del chat de Telegram si el cliente usará integración por Telegram
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-4">
+                        <label for="documents" class="form-label">
+                            <i class="fas fa-file-upload me-2"></i><strong>Documentos Iniciales</strong> <span class="text-muted">(Opcional)</span>
+                        </label>
+                        <input type="file" class="form-control" id="documents" name="documents" 
+                               multiple accept=".pdf,.txt,.doc,.docx">
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Puedes subir documentos ahora o agregarlos después. 
+                            Formatos soportados: <strong>PDF, TXT, DOC, DOCX</strong>
+                        </div>
+                        
+                        <!-- Preview de archivos seleccionados -->
+                        <div id="filePreview" class="mt-3 d-none">
+                            <h6>Archivos seleccionados:</h6>
+                            <div id="fileList" class="list-group list-group-flush"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>¿Qué sucederá?</strong>
+                        <ol class="mb-0 mt-2">
+                            <li>Se creará el cliente con un ID único público</li>
+                            <li>Se procesarán los documentos subidos (si los hay)</li>
+                            <li>Se generarán los vectores de embeddings automáticamente</li>
+                            <li>El cliente estará listo para responder preguntas</li>
+                        </ol>
+                    </div>
+                </div>
+                
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('indexer_admin.list_clients') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Volver a Clientes
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                            <i class="fas fa-plus-circle me-2"></i>Crear Cliente
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Card de información adicional -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-question-circle me-2"></i>Información Importante</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-key me-2 text-primary"></i>ID Público</h6>
+                        <p class="text-muted">
+                            Cada cliente recibe un ID público único (UUID) que se usa para 
+                            identificarlo de manera segura en la API y el widget web.
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-database me-2 text-success"></i>Almacenamiento</h6>
+                        <p class="text-muted">
+                            Todos los documentos y vectores se almacenan en PostgreSQL de 
+                            manera segura y con aislamiento completo entre clientes.
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-language me-2 text-info"></i>Multiidioma</h6>
+                        <p class="text-muted">
+                            El sistema detecta automáticamente el idioma de las consultas 
+                            y responde en el mismo idioma (Español, Inglés, Francés, etc.).
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-shield-alt me-2 text-warning"></i>Seguridad</h6>
+                        <p class="text-muted">
+                            Cada cliente tiene acceso solo a sus propios documentos. 
+                            No hay cruce de información entre diferentes empresas.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de progreso -->
+<div class="modal fade" id="processingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <div class="loading-spinner mx-auto" style="width: 3rem; height: 3rem;"></div>
+                </div>
+                <h5 class="mb-3">Creando Cliente...</h5>
+                <div id="processingSteps">
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%" id="progressBar"></div>
+                    </div>
+                    <div id="currentStep" class="text-muted">Iniciando proceso...</div>
+                </div>
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Este proceso puede tomar varios minutos dependiendo del número de documentos
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Preview de archivos seleccionados
+    document.getElementById('documents').addEventListener('change', function() {
+        const files = this.files;
+        const preview = document.getElementById('filePreview');
+        const fileList = document.getElementById('fileList');
+        
+        if (files.length > 0) {
+            preview.classList.remove('d-none');
+            fileList.innerHTML = '';
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const fileItem = document.createElement('div');
+                fileItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                
+                const fileInfo = document.createElement('div');
+                fileInfo.innerHTML = `
+                    <strong>${file.name}</strong>
+                    <br><small class="text-muted">${formatFileSize(file.size)} - ${file.type || 'Tipo desconocido'}</small>
+                `;
+                
+                const fileIcon = document.createElement('span');
+                fileIcon.innerHTML = getFileIcon(file.name);
+                
+                fileItem.appendChild(fileIcon);
+                fileItem.appendChild(fileInfo);
+                fileList.appendChild(fileItem);
+            }
+        } else {
+            preview.classList.add('d-none');
+        }
+    });
+    
+    // Formatear tamaño de archivo
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // Obtener icono según extensión
+    function getFileIcon(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const icons = {
+            'pdf': '<i class="fas fa-file-pdf text-danger fa-2x"></i>',
+            'txt': '<i class="fas fa-file-alt text-secondary fa-2x"></i>',
+            'doc': '<i class="fas fa-file-word text-primary fa-2x"></i>',
+            'docx': '<i class="fas fa-file-word text-primary fa-2x"></i>'
+        };
+        return icons[ext] || '<i class="fas fa-file text-muted fa-2x"></i>';
+    }
+    
+    // Manejar envío del formulario
+    document.getElementById('addClientForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById('name').value.trim();
+        if (!name) {
+            alert('Por favor ingresa el nombre del cliente');
+            return;
+        }
+        
+        // Mostrar modal de progreso
+        const modal = new bootstrap.Modal(document.getElementById('processingModal'));
+        modal.show();
+        
+        // Simular pasos del proceso
+        const steps = [
+            'Validando información del cliente...',
+            'Creando registro en base de datos...',
+            'Procesando documentos...',
+            'Generando embeddings...',
+            'Creando índice FAISS...',
+            'Finalizando configuración...'
+        ];
+        
+        let currentStepIndex = 0;
+        const progressBar = document.getElementById('progressBar');
+        const currentStepElement = document.getElementById('currentStep');
+        
+        function updateProgress() {
+            if (currentStepIndex < steps.length) {
+                currentStepElement.textContent = steps[currentStepIndex];
+                const progress = ((currentStepIndex + 1) / steps.length) * 100;
+                progressBar.style.width = progress + '%';
+                currentStepIndex++;
+                
+                // Simular tiempo variable por paso
+                const timeouts = [1000, 1500, 3000, 5000, 2000, 1000];
+                setTimeout(updateProgress, timeouts[currentStepIndex - 1] || 1000);
+            }
+        }
+        
+        updateProgress();
+        
+        // Enviar formulario real
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.text();
+            }
+            throw new Error('Error en la respuesta del servidor');
+        })
+        .then(html => {
+            // Redireccionar o mostrar resultado
+            window.location.href = '{{ url_for("indexer_admin.list_clients") }}';
+        })
+        .catch(error => {
+            modal.hide();
+            alert(`❌ Error creando cliente: ${error.message}`);
+            console.error('Error:', error);
+        });
+    });
+    
+    // Validación en tiempo real
+    document.getElementById('name').addEventListener('input', function() {
+        const value = this.value.trim();
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (value.length > 0) {
+            submitBtn.disabled = false;
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+        } else {
+            submitBtn.disabled = true;
+            this.classList.remove('is-valid');
+            this.classList.add('is-invalid');
+        }
+    });
+    
+    // Validación inicial
+    document.addEventListener('DOMContentLoaded', function() {
+        const nameInput = document.getElementById('name');
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+    });
+</script>
+{% endblock %}

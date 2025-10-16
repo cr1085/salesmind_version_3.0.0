@@ -3,27 +3,50 @@
 from flask import Blueprint, request
 from config import Config
 import telegram
-import sqlite3 # <-- Importamos sqlite3
 import asyncio
 from modules.assistant.core import get_commercial_response
+from ..models import Conversation, Client
+from .. import db
 
 bot_bp = Blueprint('bot', __name__)
 bot = telegram.Bot(token=Config.TELEGRAM_TOKEN)
 
-# --- NUEVA FUNCIÓN PARA GUARDAR MENSAJES ---
-def log_message(chat_id, sender, message):
+# --- FUNCIÓN MIGRADA PARA GUARDAR MENSAJES EN POSTGRESQL ---
+def log_message(chat_id, sender, message, client_id=None, platform='telegram', message_type='text'):
+    """
+    Guarda mensajes en PostgreSQL en lugar de SQLite.
+    """
     try:
-        conn = sqlite3.connect(Config.DATABASE_PATH)
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO conversations (chat_id, sender, message_text) VALUES (?, ?, ?)",
-            (chat_id, sender, message)
+        # Si no se proporciona client_id, intentar encontrarlo por telegram_chat_id
+        if not client_id:
+            client = Client.query.filter_by(telegram_chat_id=str(chat_id)).first()
+            if client:
+                client_id = client.id
+            else:
+                print(f"ADVERTENCIA: No se encontró cliente para chat_id {chat_id}")
+                return False
+        
+        # Crear nueva conversación en PostgreSQL
+        conversation = Conversation(
+            client_id=client_id,
+            chat_id=str(chat_id),
+            sender=sender,
+            message_text=message,
+            message_type=message_type,
+            platform=platform
         )
-        conn.commit()
-        conn.close()
+        
+        db.session.add(conversation)
+        db.session.commit()
+        
+        print(f"✅ Mensaje guardado: {sender} -> {chat_id}")
+        return True
+        
     except Exception as e:
-        print(f"Error al guardar el mensaje en la base de datos: {e}")
-# --- FIN DE LA NUEVA FUNCIÓN ---
+        print(f"❌ Error al guardar el mensaje en PostgreSQL: {e}")
+        db.session.rollback()
+        return False
+# --- FIN DE LA FUNCIÓN MIGRADA ---
 
 def run_async(coro):
     try:
@@ -45,11 +68,17 @@ def telegram_webhook():
         # 1. Guardamos el mensaje del usuario
         log_message(chat_id, 'user', user_message)
 
-        # 2. Obtenemos la respuesta de la IA
-        ai_message = get_commercial_response(user_message)
-
-        # 3. Guardamos la respuesta del bot
-        log_message(chat_id, 'bot', ai_message)
+        # 2. Obtener cliente asociado al telegram chat
+        client = Client.query.filter_by(telegram_chat_id=str(chat_id)).first()
+        if not client:
+            ai_message = "Lo siento, tu chat no está configurado correctamente. Contacta al administrador."
+        else:
+            # 3. Obtener respuesta de la IA usando PostgreSQL
+            ai_message = get_commercial_response(user_message, client.id)
+            
+            # 4. Guardar ambos mensajes en PostgreSQL
+            log_message(chat_id, 'user', user_message, client.id, 'telegram')
+            log_message(chat_id, 'assistant', ai_message, client.id, 'telegram')
         # --- FIN DEL REGISTRO ---
 
         run_async(bot.send_message(chat_id=chat_id, text=ai_message))
