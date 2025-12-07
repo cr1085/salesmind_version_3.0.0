@@ -151,3 +151,5 @@ Finalmente, actualiza el webhook de Telegram para apuntar a tu servidor. Pega la
 [https://api.telegram.org/bot](https://api.telegram.org/bot)<TU_TOKEN>/setWebhook?url=http://<TU_IP_PUBLICA>/salesmind/telegram_webhook
 
 ¡Tu asistente SalesMind ya está en línea y listo para vender!
+
+![Banner de 3CB Soluciones y Cristian Cuadrado](https://raw.githubusercontent.com/cr1085/cr1085/refs/heads/main/assets/headerventas.png)
