@@ -9,6 +9,7 @@ from typing import List, Dict, Tuple, Optional, Union
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain.schema.document import Document as LangchainDoc
+from langchain_community.embeddings import OllamaEmbeddings
 
 from .models import Embedding, FAISSIndex, Document, Client
 from . import db
@@ -26,12 +27,22 @@ class VectorManager:
             chunk_overlap=200
         )
     
+    # def _get_embedding_model(self):
+    #     """Inicializa el modelo de embeddings si no está cargado."""
+    #     if self.embedding_model is None:
+    #         self.embedding_model = GoogleGenerativeAIEmbeddings(
+    #             model="models/text-embedding-004",
+    #             google_api_key=Config.GOOGLE_API_KEY
+    #         )
+    #     return self.embedding_model
     def _get_embedding_model(self):
-        """Inicializa el modelo de embeddings si no está cargado."""
+        """Inicializa el modelo de embeddings para Ollama."""
         if self.embedding_model is None:
-            self.embedding_model = GoogleGenerativeAIEmbeddings(
-                model="models/text-embedding-004",
-                google_api_key=Config.GOOGLE_API_KEY
+            # --- ESTE ES EL CAMBIO ---
+            # Usamos un modelo específico de Ollama para embeddings
+            print("🧠 Usando modelo de embeddings de Ollama (nomic-embed-text)")
+            self.embedding_model = OllamaEmbeddings(
+                model="nomic-embed-text"
             )
         return self.embedding_model
     

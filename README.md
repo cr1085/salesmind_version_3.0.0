@@ -1,3 +1,10 @@
+
+![Banner de 3CB Soluciones y Cristian Cuadrado](https://raw.githubusercontent.com/cr1085/cr1085/refs/heads/main/assets/headerventas.png)
+
+
+![Banner de 3CB Soluciones y Cristian Cuadrado](https://raw.githubusercontent.com/cr1085/cr1085/refs/heads/main/assets/headermente.png)
+
+
 SalesMind: Asistente de Ventas con IA para Telegram
 SalesMind es un asistente de ventas conversacional impulsado por un modelo de IA generativa (Google Gemini) y una arquitectura RAG (Generación Aumentada por Recuperación). El bot se conecta a Telegram y está diseñado para responder preguntas de clientes basándose en una base de conocimiento personalizada (catálogos de productos, listas de precios, etc., en formato PDF).
 
